@@ -99,6 +99,9 @@ services:
 
   app:
     build: .
+    # The app exits fatally if IMAP becomes unreachable (mail source retries,
+    # then shuts the context down), so let Compose bring it back.
+    restart: unless-stopped
     depends_on:
       greenmail:
         condition: service_healthy
