@@ -1,3 +1,11 @@
+<div align="center">
+
+  <img src="https://raw.githubusercontent.com/routecraftjs/routecraft/main/routecraft.svg" alt="Routecraft" width="120" />
+
+  <p><strong>Tools for agents. Or the agent harness itself.</strong></p>
+
+</div>
+
 # Craft Harness
 
 A working AI agent in 30 seconds. Built on [Routecraft](https://routecraft.dev).
