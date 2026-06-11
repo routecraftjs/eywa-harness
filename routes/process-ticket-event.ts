@@ -24,13 +24,14 @@ interface PlankaWebhookPayload {
 }
 
 /**
- * Routecraft has no built-in HTTP server source yet (`http()` is
- * client-only), so the webhook listener is a custom source: a minimal
- * Node HTTP server that forwards each POST into the route, carrying the
- * raw body and signature header for the HMAC check downstream.
+ * Routecraft 0.6 ships an `http()` server source, but it parses the body
+ * before the route sees it, and HMAC signatures must be verified against the
+ * exact raw bytes. Until the framework exposes the raw request body, the
+ * webhook listener stays a custom source carrying the raw body and signature
+ * header for the HMAC check downstream.
  */
 const plankaWebhook: Source<PlankaWebhookPayload> = {
-  subscribe(_context, handler, abortController, onReady) {
+  subscribe(sub) {
     const server = createServer((req, res) => {
       if (req.method !== "POST" || req.url !== "/webhooks/planka") {
         res.statusCode = 404;
@@ -50,12 +51,16 @@ const plankaWebhook: Source<PlankaWebhookPayload> = {
           return;
         }
         const signature = req.headers["x-webhook-signature"];
-        handler(payload, {
-          "x-routecraft-http-raw-body": raw,
-          "x-webhook-signature": Array.isArray(signature)
-            ? signature[0]
-            : signature,
-        })
+        sub
+          .emit({
+            message: payload,
+            headers: {
+              "x-routecraft-http-raw-body": raw,
+              "x-webhook-signature": Array.isArray(signature)
+                ? signature[0]
+                : signature,
+            },
+          })
           .then(() => {
             res.statusCode = 204;
             res.end();
@@ -66,8 +71,8 @@ const plankaWebhook: Source<PlankaWebhookPayload> = {
           });
       });
     });
-    abortController.signal.addEventListener("abort", () => server.close());
-    server.listen(env.APP_PORT, env.APP_HOST, () => onReady?.());
+    sub.signal.addEventListener("abort", () => server.close());
+    server.listen(env.APP_PORT, env.APP_HOST, () => sub.ready());
   },
 };
 

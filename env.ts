@@ -5,7 +5,7 @@ const EnvSchema = z.object({
 
   // LLM
   ANTHROPIC_API_KEY: z.string().min(1, "ANTHROPIC_API_KEY is required"),
-  AGENT_MODEL: z.string().default("anthropic:claude-haiku-4-5-20251001"),
+  AGENT_MODEL: z.string().optional(),
 
   // Mail (Greenmail by default for the demo)
   MAIL_HOST: z.string().default("greenmail"),
