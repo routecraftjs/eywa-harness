@@ -1,4 +1,4 @@
-# Eywa harness Docker Compose stack.
+# Craft Harness Docker Compose stack.
 #
 # `docker compose up` brings up everything you need for the demo: a mock
 # mail server, a mock kanban board, an S3-compatible object store, and the
@@ -7,7 +7,7 @@
 # Default profile: full demo (mail + tickets + knowledge).
 # Use `docker compose --profile minimal up` to skip the knowledge bucket.
 
-name: eywa-harness
+name: craft-harness
 
 services:
   greenmail:
@@ -124,7 +124,7 @@ services:
       PLANKA_BASE_URL: http://planka:1337
       PLANKA_USER: demo@harness.local
       PLANKA_PASSWORD: demo
-      PLANKA_PROJECT_NAME: Eywa Harness
+      PLANKA_PROJECT_NAME: Craft Harness
       PLANKA_BOARD_NAME: Tasks
       PLANKA_WEBHOOK_SECRET: dev-secret-change-me
 

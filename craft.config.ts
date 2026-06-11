@@ -59,7 +59,7 @@ export const craftConfig: CraftConfig = defineConfig({
     },
   },
   mcp: {
-    name: "eywa-harness",
+    name: "craft-harness",
     version: "0.1.0",
     transport: "http",
     host: env.APP_HOST,

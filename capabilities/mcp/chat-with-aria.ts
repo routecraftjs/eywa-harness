@@ -19,13 +19,13 @@ const InputSchema = z.object({
 export default craft()
   .id("chat-with-aria")
   .description(
-    "Chat with Aria, the demo Eywa harness assistant. She can read the knowledge base, file tickets, and update the board.",
+    "Chat with Aria, the demo Craft Harness assistant. She can read the knowledge base, file tickets, and update the board.",
   )
   .input({ body: InputSchema })
   .from(
     mcp("chat-with-aria", {
       description:
-        "Chat with Aria, the demo Eywa harness assistant. She can read the knowledge base, file tickets, and update the board.",
+        "Chat with Aria, the demo Craft Harness assistant. She can read the knowledge base, file tickets, and update the board.",
       schema: InputSchema,
       annotations: { readOnlyHint: false, destructiveHint: false },
     }),

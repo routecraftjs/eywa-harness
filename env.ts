@@ -20,7 +20,7 @@ const EnvSchema = z.object({
   PLANKA_BASE_URL: z.string().default("http://planka:1337"),
   PLANKA_USER: z.string().default("demo@harness.local"),
   PLANKA_PASSWORD: z.string().default("demo"),
-  PLANKA_PROJECT_NAME: z.string().default("Eywa Harness"),
+  PLANKA_PROJECT_NAME: z.string().default("Craft Harness"),
   PLANKA_BOARD_NAME: z.string().default("Tasks"),
   PLANKA_WEBHOOK_SECRET: z.string().default("dev-secret-change-me"),
 

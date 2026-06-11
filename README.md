@@ -1,4 +1,4 @@
-# Eywa Harness
+# Craft Harness
 
 A working AI agent in 30 seconds. Built on [Routecraft](https://routecraft.dev).
 
@@ -21,8 +21,8 @@ This is a flagship example for Routecraft. It demonstrates:
 You need Docker and an Anthropic API key.
 
 ```bash
-git clone https://github.com/routecraftjs/eywa-harness.git
-cd eywa-harness
+git clone https://github.com/routecraftjs/craft-harness.git
+cd craft-harness
 cp .env.example .env
 # Edit .env and set ANTHROPIC_API_KEY=sk-ant-...
 docker compose up
@@ -92,7 +92,7 @@ calls tools, and replies through whichever channel makes sense.
 ## Project layout
 
 ```
-eywa-harness/
+craft-harness/
 |-- agents/aria.md             persona system prompt + tool list
 |-- capabilities/              nine tools, one per file
 |   |-- tickets/               Planka kanban operations
