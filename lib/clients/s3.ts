@@ -151,7 +151,10 @@ export async function findKnowledgeFiles(
 
     if (query) {
       const haystack = `${JSON.stringify(file.frontmatter).toLowerCase()} ${file.content.toLowerCase()}`;
-      if (!haystack.includes(query.toLowerCase())) continue;
+      // Match every term independently: agents phrase queries naturally
+      // ("public holiday calendar"), which rarely occur verbatim.
+      const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
+      if (!terms.every((term) => haystack.includes(term))) continue;
     }
 
     results.push({
