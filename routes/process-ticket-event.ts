@@ -1,5 +1,6 @@
 import { agent } from "@routecraft/ai";
-import { craft, http } from "@routecraft/routecraft";
+import { craft, type Source } from "@routecraft/routecraft";
+import { createServer } from "node:http";
 import { env } from "../env.js";
 import { verifySignature } from "../lib/webhook-signature.js";
 
@@ -22,16 +23,57 @@ interface PlankaWebhookPayload {
   };
 }
 
+/**
+ * Routecraft has no built-in HTTP server source yet (`http()` is
+ * client-only), so the webhook listener is a custom source: a minimal
+ * Node HTTP server that forwards each POST into the route, carrying the
+ * raw body and signature header for the HMAC check downstream.
+ */
+const plankaWebhook: Source<PlankaWebhookPayload> = {
+  subscribe(_context, handler, abortController, onReady) {
+    const server = createServer((req, res) => {
+      if (req.method !== "POST" || req.url !== "/webhooks/planka") {
+        res.statusCode = 404;
+        res.end();
+        return;
+      }
+      const chunks: Buffer[] = [];
+      req.on("data", (chunk: Buffer) => chunks.push(chunk));
+      req.on("end", () => {
+        const raw = Buffer.concat(chunks).toString("utf8");
+        let payload: PlankaWebhookPayload;
+        try {
+          payload = JSON.parse(raw) as PlankaWebhookPayload;
+        } catch {
+          res.statusCode = 400;
+          res.end();
+          return;
+        }
+        const signature = req.headers["x-webhook-signature"];
+        handler(payload, {
+          "x-routecraft-http-raw-body": raw,
+          "x-webhook-signature": Array.isArray(signature)
+            ? signature[0]
+            : signature,
+        })
+          .then(() => {
+            res.statusCode = 204;
+            res.end();
+          })
+          .catch(() => {
+            res.statusCode = 500;
+            res.end();
+          });
+      });
+    });
+    abortController.signal.addEventListener("abort", () => server.close());
+    server.listen(env.APP_PORT, env.APP_HOST, () => onReady?.());
+  },
+};
+
 export default craft()
   .id("process-ticket-event")
-  .from(
-    http({
-      host: env.APP_HOST,
-      port: env.APP_PORT,
-      path: "/webhooks/planka",
-      method: "POST",
-    }),
-  )
+  .from(plankaWebhook)
   .filter((ex) => {
     const raw = ex.headers["x-routecraft-http-raw-body"] as string | undefined;
     const signature = ex.headers["x-webhook-signature"] as string | undefined;

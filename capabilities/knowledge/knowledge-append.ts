@@ -24,9 +24,8 @@ export default craft()
   )
   .input({ body: InputSchema })
   .output({ body: ResultSchema })
-  .from(direct())
-  .process(async (ex) => {
-    await appendToKnowledgeFile(ex.body.path, ex.body.section);
-    ex.body = { path: ex.body.path, ok: true };
-    return ex;
+  .from<z.infer<typeof InputSchema>>(direct())
+  .transform(async (body) => {
+    await appendToKnowledgeFile(body.path, body.section);
+    return { path: body.path, ok: true as const };
   });

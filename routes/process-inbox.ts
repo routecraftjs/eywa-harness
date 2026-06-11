@@ -27,7 +27,7 @@ export default craft()
     channel: "email" as const,
     from: body.from,
     subject: body.subject,
-    text: body.text ?? body.textAsHtml ?? "",
+    text: body.body.text ?? body.body.html ?? "",
     messageId: body.messageId,
   }))
   .to(agent("aria"));

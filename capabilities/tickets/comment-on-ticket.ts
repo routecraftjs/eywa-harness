@@ -24,8 +24,5 @@ export default craft()
   )
   .input({ body: InputSchema })
   .output({ body: OutputSchema })
-  .from(direct())
-  .process(async (ex) => {
-    ex.body = await commentOnTicket(ex.body.id, ex.body.text);
-    return ex;
-  });
+  .from<z.infer<typeof InputSchema>>(direct())
+  .transform((body) => commentOnTicket(body.id, body.text));

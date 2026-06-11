@@ -6,7 +6,9 @@ const InputSchema = z.object({
   text: z
     .string()
     .min(1)
-    .describe("Your message to Aria. She can answer questions, file tickets, and update the knowledge base."),
+    .describe(
+      "Your message to Aria. She can answer questions, file tickets, and update the knowledge base.",
+    ),
 });
 
 /**
@@ -22,13 +24,8 @@ export default craft()
     "Chat with Aria, the demo Craft Harness assistant. She can read the knowledge base, file tickets, and update the board.",
   )
   .input({ body: InputSchema })
-  .from(
-    mcp("chat-with-aria", {
-      description:
-        "Chat with Aria, the demo Craft Harness assistant. She can read the knowledge base, file tickets, and update the board.",
-      schema: InputSchema,
-      annotations: { readOnlyHint: false, destructiveHint: false },
-    }),
+  .from<z.infer<typeof InputSchema>>(
+    mcp({ annotations: { readOnlyHint: false, destructiveHint: false } }),
   )
   .transform((body) => ({
     channel: "mcp" as const,

@@ -1,4 +1,4 @@
-import "@routecraft/ai";
+import { tools } from "@routecraft/ai";
 import { defineConfig, type CraftConfig } from "@routecraft/routecraft";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -14,17 +14,16 @@ function loadAgent(id: string) {
   const here = dirname(fileURLToPath(import.meta.url));
   const raw = readFileSync(join(here, "agents", `${id}.md`), "utf8");
   const { data, content } = matter(raw);
-  const tools = (data.tools as string | undefined)
+  const toolNames = (data.tools as string | undefined)
     ?.split(",")
     .map((t) => t.trim())
     .filter(Boolean);
   return {
-    name: (data.name as string) ?? id,
-    description: data.description as string | undefined,
+    description: (data.description as string | undefined) ?? id,
     model: (data.model as string) ?? env.AGENT_MODEL,
     maxTurns: (data.maxTurns as number | undefined) ?? 8,
-    systemPrompt: content,
-    tools,
+    system: content,
+    tools: toolNames ? tools(toolNames) : undefined,
   };
 }
 

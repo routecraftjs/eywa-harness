@@ -8,7 +8,9 @@ const InputSchema = z.object({
   body: z
     .string()
     .optional()
-    .describe("Markdown body. Include all relevant context the human will need."),
+    .describe(
+      "Markdown body. Include all relevant context the human will need.",
+    ),
   status: z
     .string()
     .optional()
@@ -30,9 +32,5 @@ export default craft()
   )
   .input({ body: InputSchema })
   .output({ body: TicketSchema })
-  .from(direct())
-  .process(async (ex) => {
-    const ticket = await createTicket(ex.body);
-    ex.body = ticket;
-    return ex;
-  });
+  .from<z.infer<typeof InputSchema>>(direct())
+  .transform((body) => createTicket(body));

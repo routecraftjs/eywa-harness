@@ -11,7 +11,7 @@ const InputSchema = z.object({
 
 const ResultSchema = z.object({
   path: z.string(),
-  frontmatter: z.record(z.unknown()),
+  frontmatter: z.record(z.string(), z.unknown()),
   content: z.string(),
 });
 
@@ -20,14 +20,13 @@ export default craft()
   .description("Read a single markdown file from the knowledge base.")
   .input({ body: InputSchema })
   .output({ body: ResultSchema })
-  .from(direct())
-  .process(async (ex) => {
-    const file = await readKnowledgeFile(ex.body.path);
+  .from<z.infer<typeof InputSchema>>(direct())
+  .transform(async (body) => {
+    const file = await readKnowledgeFile(body.path);
     if (!file) {
       throw new Error(
-        `Knowledge file not found: ${ex.body.path}. Use knowledge-find to list available paths.`,
+        `Knowledge file not found: ${body.path}. Use knowledge-find to list available paths.`,
       );
     }
-    ex.body = file;
-    return ex;
+    return file;
   });

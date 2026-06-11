@@ -14,8 +14,5 @@ export default craft()
   )
   .input({ body: InputSchema })
   .output({ body: TicketSchema })
-  .from(direct())
-  .process(async (ex) => {
-    ex.body = await getTicket(ex.body.id);
-    return ex;
-  });
+  .from<z.infer<typeof InputSchema>>(direct())
+  .transform((body) => getTicket(body.id));

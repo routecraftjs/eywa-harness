@@ -8,7 +8,7 @@ const InputSchema = z.object({
     .min(1)
     .describe("Path of the markdown file, e.g. 'team.md'. Overwrites if it exists."),
   frontmatter: z
-    .record(z.unknown())
+    .record(z.string(), z.unknown())
     .default({})
     .describe(
       "YAML frontmatter as an object. Include `tags`, `title`, and any structured fields the agent should later filter on.",
@@ -28,9 +28,8 @@ export default craft()
   )
   .input({ body: InputSchema })
   .output({ body: ResultSchema })
-  .from(direct())
-  .process(async (ex) => {
-    await writeKnowledgeFile(ex.body.path, ex.body.frontmatter, ex.body.body);
-    ex.body = { path: ex.body.path, ok: true };
-    return ex;
+  .from<z.infer<typeof InputSchema>>(direct())
+  .transform(async (body) => {
+    await writeKnowledgeFile(body.path, body.frontmatter, body.body);
+    return { path: body.path, ok: true as const };
   });

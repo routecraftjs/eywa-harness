@@ -141,6 +141,13 @@ contributed back upstream:
 - **`@routecraft/webhook-signature` helper**. The `lib/webhook-signature.ts`
   here covers HMAC-SHA256/SHA1/base64 with an optional prefix. Reusable
   across Planka, Monday, GitHub, Stripe.
+- **HTTP ingress source**. `http()` is client/destination-only today, so
+  the Planka webhook listener in `routes/process-ticket-event.ts` is a
+  custom `Source` wrapping a Node HTTP server. A first-class webhook
+  source belongs in the framework.
+- **Custom headers on mail send**. `MailSendPayload` has no headers
+  field, so replies cannot set `In-Reply-To`/`References` and threads
+  do not stitch together in a real mail client.
 - **Markdown-with-frontmatter helper**. We use `gray-matter` directly today;
   Routecraft already parses frontmatter for personas internally and could
   expose that as a public util.

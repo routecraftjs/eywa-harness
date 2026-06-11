@@ -26,7 +26,7 @@ const ResultSchema = z.object({
   results: z.array(
     z.object({
       path: z.string(),
-      frontmatter: z.record(z.unknown()),
+      frontmatter: z.record(z.string(), z.unknown()),
       snippet: z.string(),
     }),
   ),
@@ -39,9 +39,5 @@ export default craft()
   )
   .input({ body: InputSchema })
   .output({ body: ResultSchema })
-  .from(direct())
-  .process(async (ex) => {
-    const results = await findKnowledgeFiles(ex.body);
-    ex.body = { results };
-    return ex;
-  });
+  .from<z.infer<typeof InputSchema>>(direct())
+  .transform(async (body) => ({ results: await findKnowledgeFiles(body) }));

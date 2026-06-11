@@ -19,8 +19,5 @@ export default craft()
   )
   .input({ body: InputSchema })
   .output({ body: TicketSchema })
-  .from(direct())
-  .process(async (ex) => {
-    ex.body = await updateTicketStatus(ex.body.id, ex.body.status);
-    return ex;
-  });
+  .from<z.infer<typeof InputSchema>>(direct())
+  .transform((body) => updateTicketStatus(body.id, body.status));
