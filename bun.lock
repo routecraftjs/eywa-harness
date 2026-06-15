@@ -8,9 +8,9 @@
         "@ai-sdk/anthropic": "^2.0.0",
         "@aws-sdk/client-s3": "^3.700.0",
         "@modelcontextprotocol/sdk": "^1.29.0",
-        "@routecraft/ai": "0.6.0-canary.20",
-        "@routecraft/cli": "0.6.0-canary.20",
-        "@routecraft/routecraft": "0.6.0-canary.20",
+        "@routecraft/ai": "0.6.0-canary-20260613115022",
+        "@routecraft/cli": "0.6.0-canary-20260615193241",
+        "@routecraft/routecraft": "0.6.0-canary-20260615193241",
         "gray-matter": "^4.0.3",
         "imapflow": "^1.3.2",
         "mailparser": "^3.9.8",
@@ -20,8 +20,8 @@
       },
       "devDependencies": {
         "@eslint/js": "^10.0.1",
-        "@routecraft/eslint-plugin-routecraft": "0.6.0-canary.20",
-        "@routecraft/testing": "0.6.0-canary.20",
+        "@routecraft/eslint-plugin-routecraft": "0.6.0-canary-20260615193241",
+        "@routecraft/testing": "0.6.0-canary-20260615193241",
         "@types/mailparser": "^3.4.6",
         "@types/node": "^25.3.5",
         "@types/nodemailer": "^8.0.0",
@@ -38,7 +38,7 @@
   "packages": {
     "@ai-sdk/anthropic": ["@ai-sdk/anthropic@2.0.81", "", { "dependencies": { "@ai-sdk/provider": "2.0.3", "@ai-sdk/provider-utils": "3.0.25" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-0iqx9hZc9xqdhxOdZkYJAKuCs9o+5a86gStYl0M7IBZzmx6jTDrynXiOigDjH3SQrmLclLCspTjW5E6YFrlyHQ=="],
 
-    "@ai-sdk/gateway": ["@ai-sdk/gateway@3.0.127", "", { "dependencies": { "@ai-sdk/provider": "3.0.10", "@ai-sdk/provider-utils": "4.0.27", "@vercel/oidc": "3.2.0" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-Obmw5hmE5x+ccRrMp/Djx5r0rpFVX87YqE6OY06g5fwYlRI30dA84ARfTzX45ivCvkW4eCnBpOVXVWQ/pjH85w=="],
+    "@ai-sdk/gateway": ["@ai-sdk/gateway@3.0.132", "", { "dependencies": { "@ai-sdk/provider": "3.0.10", "@ai-sdk/provider-utils": "4.0.29", "@vercel/oidc": "3.2.0" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-sFZFGk6aVSNKmgDrb14efaAbvM71AB3UUvaTsU+bvhWP9jrkRrwix/jFX8IoOAJk0/X7Xf7p3m0J2O2G6ljZbA=="],
 
     "@ai-sdk/provider": ["@ai-sdk/provider@2.0.3", "", { "dependencies": { "json-schema": "^0.4.0" } }, "sha512-h88OPkavHTiN9tMn2l5awAznGB0lXzjcLhgR1/rvjB2zlLprsNxbM2tt6OJsHUxduLC3klq0/eqaSf6fX5XVww=="],
 
@@ -214,11 +214,11 @@
 
     "@opentelemetry/api": ["@opentelemetry/api@1.9.1", "", {}, "sha512-gLyJlPHPZYdAk1JENA9LeHejZe1Ti77/pTeFm/nMXmQH/HFZlcS/O2XJB+L8fkbrNSqhdtlvjBVjxwUYanNH5Q=="],
 
-    "@opentelemetry/core": ["@opentelemetry/core@2.7.1", "", { "dependencies": { "@opentelemetry/semantic-conventions": "^1.29.0" }, "peerDependencies": { "@opentelemetry/api": ">=1.0.0 <1.10.0" } }, "sha512-QAqIj32AtK6+pEVNG7EOVxHdE06RP+FM5qpiEJ4RtDcFIqKUZHYhl7/7UY5efhwmwNAg7j8QbJVBLxMerc0+gw=="],
+    "@opentelemetry/core": ["@opentelemetry/core@2.8.0", "", { "dependencies": { "@opentelemetry/semantic-conventions": "^1.29.0" }, "peerDependencies": { "@opentelemetry/api": ">=1.0.0 <1.10.0" } }, "sha512-hd1Lfh8p545nNz+jq1Ejfz+Mn1hyLuxYn1YzTfFNrxr8urEWMNQLPf1Th8kjOH+HxwawCrtgBp8JpBUR4ZSgww=="],
 
-    "@opentelemetry/resources": ["@opentelemetry/resources@2.7.1", "", { "dependencies": { "@opentelemetry/core": "2.7.1", "@opentelemetry/semantic-conventions": "^1.29.0" }, "peerDependencies": { "@opentelemetry/api": ">=1.3.0 <1.10.0" } }, "sha512-DeT6KKolmC4e/dRQvMQ/RwlnzhaqeiFOXY5ngoOPJ07GgVVKxZOg9EcrNZb5aTzUn+iCrJldAgOfQm1O/QfPAQ=="],
+    "@opentelemetry/resources": ["@opentelemetry/resources@2.8.0", "", { "dependencies": { "@opentelemetry/core": "2.8.0", "@opentelemetry/semantic-conventions": "^1.29.0" }, "peerDependencies": { "@opentelemetry/api": ">=1.3.0 <1.10.0" } }, "sha512-qmXQ27ilDbUK/vGMqwL8D4/rhn76C+sherM4wTbjlfknR8Nvfc/hCxjRJPhkzZzUsPiNg16SA31NxMabwttRjg=="],
 
-    "@opentelemetry/sdk-trace-base": ["@opentelemetry/sdk-trace-base@2.7.1", "", { "dependencies": { "@opentelemetry/core": "2.7.1", "@opentelemetry/resources": "2.7.1", "@opentelemetry/semantic-conventions": "^1.29.0" }, "peerDependencies": { "@opentelemetry/api": ">=1.3.0 <1.10.0" } }, "sha512-NAYIlsF8MPUsKqJMiDQJTMPOmlbawC1Iz/omMLygZ1C9am8fTKYjTaI+OZM+WTY3t3Glo0wnOg/6/pac6RGPPw=="],
+    "@opentelemetry/sdk-trace-base": ["@opentelemetry/sdk-trace-base@2.8.0", "", { "dependencies": { "@opentelemetry/core": "2.8.0", "@opentelemetry/resources": "2.8.0", "@opentelemetry/semantic-conventions": "^1.29.0" }, "peerDependencies": { "@opentelemetry/api": ">=1.3.0 <1.10.0" } }, "sha512-mhU4jp+vW0mGbFRd+GeXHvmfA4aDqWjBjLC3pE5XMpLs0IE2ryYb019Ts2AQrOq67gaTF25D91+fgvEHDZEnuQ=="],
 
     "@opentelemetry/semantic-conventions": ["@opentelemetry/semantic-conventions@1.41.1", "", {}, "sha512-/UhIkaZgPutTFmQ7RnIJGgDXZmtEJ7Dvi86xNTFWcnRxVRNk/aotsqDJYeEvDP+FSMB2SdW+pQzNMcWP0rwuNA=="],
 
@@ -264,15 +264,15 @@
 
     "@rolldown/pluginutils": ["@rolldown/pluginutils@1.0.1", "", {}, "sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw=="],
 
-    "@routecraft/ai": ["@routecraft/ai@0.6.0-canary.20", "", { "dependencies": { "@routecraft/routecraft": "^0.6.0-canary.20", "@standard-schema/spec": "^1.1.0", "ai": "^6.0.174" }, "peerDependencies": { "@ai-sdk/anthropic": "^3.0.50", "@ai-sdk/google": "^3.0.34", "@ai-sdk/openai": "^3.0.37", "@ai-sdk/openai-compatible": "^1.0.0", "@huggingface/transformers": "^3.8.1", "@modelcontextprotocol/sdk": "^1.27.1", "@openrouter/ai-sdk-provider": "^2.2.3", "express": "^5.0.0", "ollama-ai-provider-v2": "^3.3.1", "yaml": "^2.8.0" }, "optionalPeers": ["@ai-sdk/anthropic", "@ai-sdk/google", "@ai-sdk/openai", "@ai-sdk/openai-compatible", "@huggingface/transformers", "@modelcontextprotocol/sdk", "@openrouter/ai-sdk-provider", "express", "ollama-ai-provider-v2", "yaml"] }, "sha512-kB0sXj7VYfnqmoXQpAm/cPOqP3Bt+t6PmuNx9Wywkl9MrzbHKoTUVIA8ii+WLoH5bz5Tk3b4WnxEuHcRZIeDog=="],
+    "@routecraft/ai": ["@routecraft/ai@0.6.0-canary-20260613115022", "", { "dependencies": { "@standard-schema/spec": "^1.1.0", "ai": "^6.0.204" }, "peerDependencies": { "@ai-sdk/anthropic": "^3.0.50", "@ai-sdk/google": "^3.0.34", "@ai-sdk/openai": "^3.0.37", "@ai-sdk/openai-compatible": "^1.0.0", "@huggingface/transformers": "^3.8.1", "@modelcontextprotocol/sdk": "^1.27.1", "@openrouter/ai-sdk-provider": "^2.2.3", "@routecraft/routecraft": "0.6.0-canary-20260613115022", "express": "^5.0.0", "ollama-ai-provider-v2": "^3.3.1", "yaml": "^2.8.0" }, "optionalPeers": ["@ai-sdk/anthropic", "@ai-sdk/google", "@ai-sdk/openai", "@ai-sdk/openai-compatible", "@huggingface/transformers", "@modelcontextprotocol/sdk", "@openrouter/ai-sdk-provider", "express", "ollama-ai-provider-v2", "yaml"] }, "sha512-9Wc00XP1M2+/rJfgzj9G7FqXqWrSQlWqi8cAe2NnrYMcDA3fZS9tmJzqdrN334gVh9gyrnsx4v6kKWkB8+YL5A=="],
 
-    "@routecraft/cli": ["@routecraft/cli@0.6.0-canary.20", "", { "dependencies": { "@opentelemetry/sdk-trace-base": "^2.7.1", "@routecraft/routecraft": "^0.6.0-canary.20", "agent-browser": "^0.17.1", "cheerio": "^1.2.0", "commander": "^14.0.3", "croner": "^10.0.1", "dotenv": "^17.4.2", "imapflow": "^1.3.3", "ink": "^5.2.1", "jose": "^6.2.3", "mailparser": "^3.9.8", "nodemailer": "^6.10.1", "papaparse": "^5.5.3", "pino-pretty": "^13.1.3", "react": "^18.3.1", "tsdav": "^2.1.5" }, "bin": { "craft": "dist/index.js" } }, "sha512-fbF5xvt3+1EwVmSsDbZycqUqygiCNauyZsfhoLBR2cIBEetjVesqGQtVo0dyAh/HtF7HTBae4USyF/ebgz37OA=="],
+    "@routecraft/cli": ["@routecraft/cli@0.6.0-canary-20260615193241", "", { "dependencies": { "@opentelemetry/sdk-trace-base": "^2.8.0", "@routecraft/routecraft": "0.6.0-canary-20260615193241", "agent-browser": "^0.17.1", "cheerio": "^1.2.0", "commander": "^14.0.3", "croner": "^10.0.1", "dotenv": "^17.4.2", "imapflow": "^1.3.3", "ink": "^5.2.1", "jose": "^6.2.3", "mailparser": "^3.9.8", "nodemailer": "^6.10.1", "papaparse": "^5.5.3", "pino-pretty": "^13.1.3", "react": "^18.3.1", "tsdav": "^2.1.5" }, "bin": { "craft": "dist/index.js" } }, "sha512-vzb/envoVQ05Ni1BiRKq9PuzuiqGgWV8cyemBEP8OxzNm0tUa7WsT4r4+gwZCr5zjHkPXUgyPkcboSGbWVdhrw=="],
 
-    "@routecraft/eslint-plugin-routecraft": ["@routecraft/eslint-plugin-routecraft@0.6.0-canary.20", "", { "peerDependencies": { "eslint": ">=9" } }, "sha512-QQe1yVqAQDr6IBeF33DuttchqCLCt1HIIw2HBtf5TbCCpNDutFF9vYg09wnMlUL94EdW3jfsP8dBiHNlCYa7rQ=="],
+    "@routecraft/eslint-plugin-routecraft": ["@routecraft/eslint-plugin-routecraft@0.6.0-canary-20260615193241", "", { "peerDependencies": { "eslint": ">=9" } }, "sha512-Gl4sbkzoz7SezkIVtQBc1ctG4sfh5G1CwCuwggcaVoaXkdDc2GmVv3Gb5tbT48wjQro5mAcowSmZ3hldQAJy8A=="],
 
-    "@routecraft/routecraft": ["@routecraft/routecraft@0.6.0-canary.20", "", { "dependencies": { "@opentelemetry/api": "^1.9.1", "@standard-schema/spec": "^1.1.0", "lru-cache": "^11.2.2", "pino": "^10.3.1" }, "optionalDependencies": { "pino-pretty": "^13.1.3" }, "peerDependencies": { "@opentelemetry/sdk-trace-base": "^2.6.0", "cheerio": "^1.2.0", "croner": "^10.0.1", "imapflow": "^1.0.0", "jose": "^6.0.0", "mailauth": "^4.0.0", "mailparser": "^3.7.0", "nodemailer": "^6.0.0", "papaparse": "^5.4.1", "tsdav": "^2.1.0" }, "optionalPeers": ["@opentelemetry/sdk-trace-base", "cheerio", "croner", "imapflow", "jose", "mailauth", "mailparser", "nodemailer", "papaparse", "tsdav"] }, "sha512-rHLtzvjD7cqbx28sP4B0YsHNqNsw9Q6hWersvkjL17HVe7bz3a3c5Rj74xNZMBgWJqsC5Fyd9y/H0ly6l6gQOQ=="],
+    "@routecraft/routecraft": ["@routecraft/routecraft@0.6.0-canary-20260615193241", "", { "dependencies": { "@opentelemetry/api": "^1.9.1", "@standard-schema/spec": "^1.1.0", "lru-cache": "^11.2.2", "pino": "^10.3.1" }, "optionalDependencies": { "pino-pretty": "^13.1.3" }, "peerDependencies": { "@opentelemetry/sdk-trace-base": "^2.6.0", "cheerio": "^1.2.0", "croner": "^10.0.1", "imapflow": "^1.0.0", "jose": "^6.0.0", "mailauth": "^4.0.0", "mailparser": "^3.7.0", "nodemailer": "^6.0.0", "papaparse": "^5.4.1", "tsdav": "^2.1.0" }, "optionalPeers": ["@opentelemetry/sdk-trace-base", "cheerio", "croner", "imapflow", "jose", "mailauth", "mailparser", "nodemailer", "papaparse", "tsdav"] }, "sha512-O2pgVz3rqObd2pvHTeBbYdvNtRsChLC/MdA2s/7yvzIP+dZdGVFX/qaC1y6cDK3MmjHyKP5PmlPdEDPS8b3+7Q=="],
 
-    "@routecraft/testing": ["@routecraft/testing@0.6.0-canary.20", "", { "dependencies": { "@routecraft/routecraft": "^0.6.0-canary.20", "@standard-schema/spec": "^1.1.0" } }, "sha512-qfuKWpJ7ik5AaF9xityRg1j1K1gm19iJX+rrsxkvx1XFteyfjzLyoiEqZOxnFUpf/73zxWwAcaxGBwbvdjREKg=="],
+    "@routecraft/testing": ["@routecraft/testing@0.6.0-canary-20260615193241", "", { "dependencies": { "@standard-schema/spec": "^1.1.0" }, "peerDependencies": { "@routecraft/routecraft": "0.6.0-canary-20260615193241" } }, "sha512-EPO9QgjptTgohFbebXU7XHrI93v8s/dQZnrWY5TPmTqII7Co3tZjOuqwK3TpO/0gWay2id0mtYiQl2QZgafV4A=="],
 
     "@selderee/plugin-htmlparser2": ["@selderee/plugin-htmlparser2@0.12.0", "", { "dependencies": { "domelementtype": "~2.3.0", "domhandler": "~5.0.3" }, "peerDependencies": { "selderee": "~0.12.0" } }, "sha512-oELmoyA6ML9jDRMV3kgcMQFKxUfBU0yFVn6yTctVaLT5ygXnxH52I3TZEgV9EhXJC68/uFvE5Daj1/25c0Xa/A=="],
 
@@ -390,7 +390,7 @@
 
     "agent-browser": ["agent-browser@0.17.1", "", { "dependencies": { "node-simctl": "^7.4.0", "playwright-core": "^1.57.0", "webdriverio": "^9.15.0", "ws": "^8.19.0", "zod": "^3.22.4" }, "bin": { "agent-browser": "bin/agent-browser.js" } }, "sha512-KNV+6F3nYStxgTrsdcfMBsxtLdnaUu2NTuQ9EL8CvnYUgAzdoYztYVJzkr1KbconGEyLdSgXZedSsKw0TPiL/g=="],
 
-    "ai": ["ai@6.0.201", "", { "dependencies": { "@ai-sdk/gateway": "3.0.127", "@ai-sdk/provider": "3.0.10", "@ai-sdk/provider-utils": "4.0.27", "@opentelemetry/api": "^1.9.0" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-iDmXSy7csk+SYaCkTUMwsOE/73pksR1spctV+u+DW97v+R/Cj01gchgCUNVrn9QyNHqOJQuTg+JBVsBsp6lOag=="],
+    "ai": ["ai@6.0.206", "", { "dependencies": { "@ai-sdk/gateway": "3.0.132", "@ai-sdk/provider": "3.0.10", "@ai-sdk/provider-utils": "4.0.29", "@opentelemetry/api": "^1.9.0" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-hVdB5PozMMxmkPBfbCxkFOn0eVeCMi/imkfPvk65cxL4O8oIrvjUxDUX8dGkdkWG1No+R7e7D9ti2DHO61Z4YQ=="],
 
     "ajv": ["ajv@6.15.0", "", { "dependencies": { "fast-deep-equal": "^3.1.1", "fast-json-stable-stringify": "^2.0.0", "json-schema-traverse": "^0.4.1", "uri-js": "^4.2.2" } }, "sha512-fgFx7Hfoq60ytK2c7DhnF8jIvzYgOMxfugjLOSMHjLIPgenqa7S7oaagATUq99mV6IYvN2tRmC0wnTYX6iPbMw=="],
 
@@ -1284,7 +1284,7 @@
 
     "@ai-sdk/gateway/@ai-sdk/provider": ["@ai-sdk/provider@3.0.10", "", { "dependencies": { "json-schema": "^0.4.0" } }, "sha512-Q3BZ27qfpYqnCYGvE3vt+Qi6LGOF9R5Nmzn+9JoM1lCRsD9mYaIhfJLkSunN48nfGXJ6n+XNV0J/XVpqGQl7Dw=="],
 
-    "@ai-sdk/gateway/@ai-sdk/provider-utils": ["@ai-sdk/provider-utils@4.0.27", "", { "dependencies": { "@ai-sdk/provider": "3.0.10", "@standard-schema/spec": "^1.1.0", "eventsource-parser": "^3.0.8" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-ubkAJ+xODouwtmN1tYlvTPphH1hPOBfZaEQe8U7skGvFAnIRs9PPpsq57bC2+Ky/MB4yzhd6YOsxTAx9sGpazw=="],
+    "@ai-sdk/gateway/@ai-sdk/provider-utils": ["@ai-sdk/provider-utils@4.0.29", "", { "dependencies": { "@ai-sdk/provider": "3.0.10", "@standard-schema/spec": "^1.1.0", "eventsource-parser": "^3.0.8" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-uhukHaCBvqkwBHkT8C2PrnqKTCoLn3pdHXqtcR9I8ErH+flbzgW4o7VHSNIup9LRu+WBvZIZDQLsx6rwl2tiOA=="],
 
     "@appium/logger/lodash": ["lodash@4.17.21", "", {}, "sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg=="],
 
@@ -1310,7 +1310,7 @@
 
     "ai/@ai-sdk/provider": ["@ai-sdk/provider@3.0.10", "", { "dependencies": { "json-schema": "^0.4.0" } }, "sha512-Q3BZ27qfpYqnCYGvE3vt+Qi6LGOF9R5Nmzn+9JoM1lCRsD9mYaIhfJLkSunN48nfGXJ6n+XNV0J/XVpqGQl7Dw=="],
 
-    "ai/@ai-sdk/provider-utils": ["@ai-sdk/provider-utils@4.0.27", "", { "dependencies": { "@ai-sdk/provider": "3.0.10", "@standard-schema/spec": "^1.1.0", "eventsource-parser": "^3.0.8" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-ubkAJ+xODouwtmN1tYlvTPphH1hPOBfZaEQe8U7skGvFAnIRs9PPpsq57bC2+Ky/MB4yzhd6YOsxTAx9sGpazw=="],
+    "ai/@ai-sdk/provider-utils": ["@ai-sdk/provider-utils@4.0.29", "", { "dependencies": { "@ai-sdk/provider": "3.0.10", "@standard-schema/spec": "^1.1.0", "eventsource-parser": "^3.0.8" }, "peerDependencies": { "zod": "^3.25.76 || ^4.1.8" } }, "sha512-uhukHaCBvqkwBHkT8C2PrnqKTCoLn3pdHXqtcR9I8ErH+flbzgW4o7VHSNIup9LRu+WBvZIZDQLsx6rwl2tiOA=="],
 
     "ajv-formats/ajv": ["ajv@8.20.0", "", { "dependencies": { "fast-deep-equal": "^3.1.3", "fast-uri": "^3.0.1", "json-schema-traverse": "^1.0.0", "require-from-string": "^2.0.2" } }, "sha512-Thbli+OlOj+iMPYFBVBfJ3OmCAnaSyNn4M1vz9T6Gka5Jt9ba/HIR56joy65tY6kx/FCF5VXNB819Y7/GUrBGA=="],
 

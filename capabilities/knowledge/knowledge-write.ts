@@ -28,7 +28,7 @@ export default craft()
   )
   .input({ body: InputSchema })
   .output({ body: ResultSchema })
-  .from<z.infer<typeof InputSchema>>(direct())
+  .from(direct())
   .transform(async (body) => {
     await writeKnowledgeFile(body.path, body.frontmatter, body.body);
     return { path: body.path, ok: true as const };

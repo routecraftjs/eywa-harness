@@ -1,11 +1,5 @@
 import { agent } from "@routecraft/ai";
-import {
-  craft,
-  mail,
-  HEADER_MAIL_FROM,
-  HEADER_MAIL_MESSAGE_ID,
-  HEADER_MAIL_SUBJECT,
-} from "@routecraft/routecraft";
+import { craft, mail, MailHeaders } from "@routecraft/routecraft";
 import { env } from "../env.js";
 import { imapOptions } from "../lib/mail-config.js";
 
@@ -38,10 +32,10 @@ export default craft()
     ...ex,
     body: {
       channel: "email" as const,
-      from: ex.headers[HEADER_MAIL_FROM] as string,
-      subject: ex.headers[HEADER_MAIL_SUBJECT] as string,
+      from: ex.headers[MailHeaders.FROM] as string,
+      subject: ex.headers[MailHeaders.SUBJECT] as string,
       text: ex.body.text ?? ex.body.html ?? "",
-      messageId: ex.headers[HEADER_MAIL_MESSAGE_ID] as string,
+      messageId: ex.headers[MailHeaders.MESSAGE_ID] as string,
     },
   }))
   .to(agent("aria"));

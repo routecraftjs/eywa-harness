@@ -32,5 +32,5 @@ export default craft()
   )
   .input({ body: InputSchema })
   .output({ body: TicketSchema })
-  .from<z.infer<typeof InputSchema>>(direct())
+  .from(direct())
   .transform((body) => createTicket(body));

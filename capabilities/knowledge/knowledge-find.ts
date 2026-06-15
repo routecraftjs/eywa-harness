@@ -39,5 +39,5 @@ export default craft()
   )
   .input({ body: InputSchema })
   .output({ body: ResultSchema })
-  .from<z.infer<typeof InputSchema>>(direct())
+  .from(direct())
   .transform(async (body) => ({ results: await findKnowledgeFiles(body) }));

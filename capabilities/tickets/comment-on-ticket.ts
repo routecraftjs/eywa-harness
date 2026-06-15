@@ -24,5 +24,5 @@ export default craft()
   )
   .input({ body: InputSchema })
   .output({ body: OutputSchema })
-  .from<z.infer<typeof InputSchema>>(direct())
+  .from(direct())
   .transform((body) => commentOnTicket(body.id, body.text));

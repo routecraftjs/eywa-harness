@@ -20,7 +20,7 @@ export default craft()
   .description("Read a single markdown file from the knowledge base.")
   .input({ body: InputSchema })
   .output({ body: ResultSchema })
-  .from<z.infer<typeof InputSchema>>(direct())
+  .from(direct())
   .transform(async (body) => {
     const file = await readKnowledgeFile(body.path);
     if (!file) {

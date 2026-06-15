@@ -24,9 +24,7 @@ export default craft()
     "Chat with Aria, the demo Craft Harness assistant. She can read the knowledge base, file tickets, and update the board.",
   )
   .input({ body: InputSchema })
-  .from<z.infer<typeof InputSchema>>(
-    mcp({ annotations: { readOnlyHint: false, destructiveHint: false } }),
-  )
+  .from(mcp({ annotations: { readOnlyHint: false, destructiveHint: false } }))
   .transform((body) => ({
     channel: "mcp" as const,
     text: body.text,
