@@ -3,9 +3,13 @@ import createTicket from "./tickets/create-ticket.js";
 import getTicket from "./tickets/get-ticket.js";
 import updateTicketStatus from "./tickets/update-ticket-status.js";
 import commentOnTicket from "./tickets/comment-on-ticket.js";
+import reportGap from "./tickets/report-gap.js";
 
 // Email
 import sendEmail from "./email/send-email.js";
+
+// Approvals
+import requestApproval from "./approvals/request-approval.js";
 
 // Knowledge
 import knowledgeFind from "./knowledge/knowledge-find.js";
@@ -22,7 +26,9 @@ export default [
   getTicket,
   updateTicketStatus,
   commentOnTicket,
+  reportGap,
   sendEmail,
+  requestApproval,
   knowledgeFind,
   knowledgeRead,
   knowledgeWrite,

@@ -43,7 +43,7 @@ Wait for everything to come up. Then visit:
 - **MinIO console**: <http://localhost:9001> (login `minioadmin` / `minioadmin`)
 - **MCP endpoint**: `http://localhost:3001/mcp` (point Claude Desktop or Cursor here)
 
-## The four scenarios
+## The scenarios
 
 ### 1. Email triage
 
@@ -69,7 +69,29 @@ calls `knowledge-find` against the seeded `holidays.md` and answers from it.
 
 Tell Aria: *"Anna joined the team this week as a frontend engineer."* She
 calls `knowledge-append` to add the entry to `team.md`. Next session, ask
-*"Who joined recently?"* and she'll answer from her own note.
+*"Who joined recently?"* and she'll answer from her own note. The entry is
+stamped with who wrote it and when, so memory carries its own provenance.
+
+### 5. Human in the loop, by moving a card
+
+Ask Aria to email someone outside the current thread: *"Email
+procurement@acme-supplies.test and accept their quote."* She will not send
+it. She calls `request-approval`, which parks the draft on the board as a
+card. Open it, read (or edit) the action block, and drag the card to the
+**Approved** list. The webhook fires, a deterministic route sends exactly
+what the card says, and comments back on the card.
+
+The agent is not in the trust path: approval is a board state it has no
+capability to set, so it cannot approve its own request. That is the whole
+point of doing it this way rather than asking the model to be careful.
+
+### 6. The backlog that writes itself
+
+Ask for something no tool covers: *"How many vacation days do I have
+left?"* Aria says plainly that she cannot, then files a `report-gap` card
+carrying the original request, what she tried, and what would have solved
+it. A real request that hit a real wall is a better backlog item than any
+speculative roadmap entry, and the card is the spec.
 
 ## Architecture
 
@@ -102,14 +124,16 @@ calls tools, and replies through whichever channel makes sense.
 ```
 craft-harness/
 |-- agents/aria.md             persona system prompt + tool list
-|-- capabilities/              nine tools, one per file
-|   |-- tickets/               Planka kanban operations
+|-- capabilities/              eleven tools, one per file
+|   |-- tickets/               Planka kanban operations + report-gap
 |   |-- email/                 send-email
+|   |-- approvals/             request-approval (human-in-the-loop)
 |   |-- knowledge/             markdown-on-S3 read+write
 |   `-- mcp/chat-with-aria.ts  MCP entrypoint
-|-- routes/                    input adapters: inbox, ticket webhook
+|-- routes/                    inbox, ticket webhook, digest, heartbeat
 |-- lib/
 |   |-- clients/               Planka REST + S3 (MinIO) clients
+|   |-- approvals.ts           approval card encode/decode (+ tests)
 |   |-- webhook-signature.ts   HMAC verifier (reusable)
 |   `-- schemas/               shared Zod schemas
 |-- knowledge/                 seed markdown files
@@ -118,6 +142,21 @@ craft-harness/
 |-- craft.config.ts            Routecraft config: agent, mail, mcp
 `-- index.ts                   routes + capabilities exports
 ```
+
+## Both execution modes, on purpose
+
+An agent platform that can only run agents is a chatbot with extra steps.
+Two scheduled routes make the point that the same framework carries
+ordinary automation:
+
+- **`weekly-digest`** is deterministic. It counts cards, lists recent
+  knowledge changes, and emails a summary. No model is involved, because
+  counting needs no judgement and an LLM here would be slower, costlier,
+  and less predictable.
+- **`heartbeat`** is agentic. Same `cron()` source, but it wakes Aria with
+  a standing instruction and lets her decide whether anything needs a
+  nudge. Presence is composition: a heartbeat is a cron route, not a
+  feature toggle.
 
 ## Configuration
 
@@ -146,16 +185,14 @@ contributed back upstream:
   for promotion. Same code works against MinIO, AWS S3, R2, B2.
 - **`@routecraft/postgres-events` event-store adapter**. Not in this v0;
   added in a v1.x release that demonstrates event-sourced agents.
-- **`@routecraft/webhook-signature` helper**. The `lib/webhook-signature.ts`
-  here covers HMAC-SHA256/SHA1/base64 with an optional prefix. Reusable
-  across Planka, Monday, GitHub, Stripe.
-- **HTTP ingress source**. `http()` is client/destination-only today, so
-  the Planka webhook listener in `routes/process-ticket-event.ts` is a
-  custom `Source` wrapping a Node HTTP server. A first-class webhook
-  source belongs in the framework.
-- **Custom headers on mail send**. `MailSendPayload` has no headers
-  field, so replies cannot set `In-Reply-To`/`References` and threads
-  do not stitch together in a real mail client.
+- **Raw request body on the http source**
+  ([#315](https://github.com/routecraftjs/routecraft/issues/315), fix open
+  in PR #523). Webhook providers sign the exact bytes they POST, and the
+  source exposes only the parsed body, so a signature can never be
+  reproduced. Until that lands, the Planka listener in
+  `routes/process-ticket-event.ts` is a custom `Source` wrapping a Node
+  HTTP server purely to keep the raw bytes, and `lib/webhook-signature.ts`
+  verifies them. Both files disappear when #523 ships.
 - **Markdown-with-frontmatter helper**. We use `gray-matter` directly today;
   Routecraft already parses frontmatter for personas internally and could
   expose that as a public util.

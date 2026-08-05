@@ -23,6 +23,10 @@ const EnvSchema = z.object({
   PLANKA_PROJECT_NAME: z.string().default("Craft Harness"),
   PLANKA_BOARD_NAME: z.string().default("Tasks"),
   PLANKA_WEBHOOK_SECRET: z.string().default("dev-secret-change-me"),
+  PLANKA_APPROVAL_LIST: z.string().default("Approved"),
+
+  // Where the deterministic weekly digest is sent.
+  DIGEST_RECIPIENT: z.string().default("demo@harness.local"),
 
   // S3 (MinIO by default)
   S3_ENDPOINT: z.string().default("http://minio:9000"),

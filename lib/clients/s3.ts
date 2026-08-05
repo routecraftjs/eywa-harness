@@ -34,6 +34,33 @@ export interface KnowledgeFile {
   content: string;
 }
 
+/**
+ * Who wrote a piece of knowledge and when.
+ *
+ * Ranking memory by trust needs to know where a fact came from, so every
+ * write stamps the file and every appended entry carries its own inline
+ * attribution. The timestamp is always taken server-side: an agent asked
+ * for the current date will confidently invent one.
+ */
+export interface Provenance {
+  author: string;
+  channel?: string;
+}
+
+function stampFrontmatter(
+  frontmatter: Record<string, unknown>,
+  provenance: Provenance | undefined,
+  at: string,
+): Record<string, unknown> {
+  if (!provenance) return frontmatter;
+  return {
+    ...frontmatter,
+    updated_at: at,
+    updated_by: provenance.author,
+    ...(provenance.channel ? { updated_via: provenance.channel } : {}),
+  };
+}
+
 export interface KnowledgeIndexEntry {
   path: string;
   frontmatter: Record<string, unknown>;
@@ -90,8 +117,14 @@ export async function writeKnowledgeFile(
   path: string,
   frontmatter: Record<string, unknown>,
   content: string,
+  provenance?: Provenance,
 ): Promise<void> {
-  const body = matter.stringify(content, frontmatter);
+  const stamped = stampFrontmatter(
+    frontmatter,
+    provenance,
+    new Date().toISOString(),
+  );
+  const body = matter.stringify(content, stamped);
   await client.send(
     new PutObjectCommand({
       Bucket: BUCKET,
@@ -105,14 +138,24 @@ export async function writeKnowledgeFile(
 export async function appendToKnowledgeFile(
   path: string,
   section: string,
+  provenance?: Provenance,
 ): Promise<void> {
+  // The attribution rides in an HTML comment: invisible when the markdown is
+  // rendered, but present in the raw text the agent reads back, so per-entry
+  // provenance survives even though the frontmatter only records the last write.
+  const attributed = provenance
+    ? `${section.trim()}\n<!-- ${provenance.author}${
+        provenance.channel ? ` via ${provenance.channel}` : ""
+      }, ${new Date().toISOString()} -->`
+    : section.trim();
+
   const existing = await readKnowledgeFile(path);
   if (!existing) {
-    await writeKnowledgeFile(path, {}, section);
+    await writeKnowledgeFile(path, {}, attributed, provenance);
     return;
   }
-  const newContent = `${existing.content.replace(/\s+$/, "")}\n\n${section.trim()}\n`;
-  await writeKnowledgeFile(path, existing.frontmatter, newContent);
+  const newContent = `${existing.content.replace(/\s+$/, "")}\n\n${attributed}\n`;
+  await writeKnowledgeFile(path, existing.frontmatter, newContent, provenance);
 }
 
 interface FindOptions {

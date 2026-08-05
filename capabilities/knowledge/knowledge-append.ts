@@ -1,6 +1,7 @@
 import { craft, direct } from "@routecraft/routecraft";
 import { z } from "zod";
 import { appendToKnowledgeFile } from "../../lib/clients/s3.js";
+import { AGENT_NAME } from "../../lib/provenance.js";
 
 const InputSchema = z.object({
   path: z
@@ -26,6 +27,6 @@ export default craft()
   .output({ body: ResultSchema })
   .from(direct())
   .transform(async (body) => {
-    await appendToKnowledgeFile(body.path, body.section);
+    await appendToKnowledgeFile(body.path, body.section, { author: AGENT_NAME });
     return { path: body.path, ok: true as const };
   });

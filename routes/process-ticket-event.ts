@@ -1,7 +1,15 @@
 import { agent } from "@routecraft/ai";
-import { craft, type Source } from "@routecraft/routecraft";
+import {
+  craft,
+  mail,
+  otherwise,
+  when,
+  type Source,
+} from "@routecraft/routecraft";
 import { createServer } from "node:http";
 import { env } from "../env.js";
+import { commentOnTicket, getTicket } from "../lib/clients/planka.js";
+import { parseApprovalAction, type ApprovalAction } from "../lib/approvals.js";
 import { verifySignature } from "../lib/webhook-signature.js";
 
 /**
@@ -12,6 +20,11 @@ import { verifySignature } from "../lib/webhook-signature.js";
  * verifies the signature, normalises the payload, and hands the change to
  * Aria for follow-up.
  */
+/** Both choice branches converge on this so the route has one output type. */
+interface Handled {
+  handled: string;
+}
+
 interface PlankaWebhookPayload {
   event: string;
   data?: {
@@ -90,11 +103,58 @@ export default craft()
       scheme: "hmac-sha256-hex",
     });
   })
-  .transform((body: PlankaWebhookPayload) => ({
-    channel: "ticket" as const,
-    event: body.event,
-    ticketId: body.data?.item?.id,
-    title: body.data?.item?.name,
-    description: body.data?.item?.description ?? "",
-  }))
-  .to(agent("aria"));
+  // Resolve the card's current list before branching, because a choice
+  // predicate is synchronous and the webhook payload does not name the list.
+  // A lookup failure is not fatal: the event simply goes to the agent.
+  .transform(async (body: PlankaWebhookPayload) => {
+    const base = {
+      channel: "ticket" as const,
+      event: body.event,
+      ticketId: body.data?.item?.id,
+      title: body.data?.item?.name,
+      description: body.data?.item?.description ?? "",
+      approved: null as ApprovalAction | null,
+    };
+    if (!base.ticketId) return base;
+    try {
+      const ticket = await getTicket(base.ticketId);
+      if (ticket.status.toLowerCase() !== env.PLANKA_APPROVAL_LIST.toLowerCase()) {
+        return base;
+      }
+      return { ...base, approved: parseApprovalAction(ticket.body) };
+    } catch {
+      return base;
+    }
+  })
+  .choice(
+    // A human moved a card carrying a drafted action into the approval list.
+    // That move is the authorisation, so this branch executes it directly:
+    // the agent is not consulted and cannot approve its own request.
+    when(
+      (ex) => ex.body.approved !== null,
+      (b) =>
+        b
+          .process((ex) => ({
+            ...ex,
+            headers: { ...ex.headers, "x-approval-ticket": ex.body.ticketId },
+            body: {
+              to: ex.body.approved!.to,
+              subject: ex.body.approved!.subject,
+              text: ex.body.approved!.body,
+            },
+          }))
+          .to(mail({ account: "default" }))
+          .process(async (ex) => {
+            const ticketId = ex.headers["x-approval-ticket"] as string;
+            await commentOnTicket(
+              ticketId,
+              "Approved and sent. Recorded by the harness, not by Aria.",
+            );
+            return ex;
+          })
+          .transform((): Handled => ({ handled: "approved-and-sent" })),
+    ),
+    otherwise((b) =>
+      b.to(agent("aria")).transform((): Handled => ({ handled: "agent" })),
+    ),
+  );

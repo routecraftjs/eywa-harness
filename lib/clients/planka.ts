@@ -218,6 +218,45 @@ export async function createTicket(
   };
 }
 
+/**
+ * Every card on the board, newest first, with its list name as `status`.
+ *
+ * Planka returns the whole board in one call, so this stays a single request
+ * no matter how many cards there are.
+ */
+export async function listTickets(options: { status?: string } = {}): Promise<
+  PlankaTicket[]
+> {
+  const { boardId, listIds } = await resolveBoard();
+  const board = await api<{
+    included?: {
+      cards?: Array<{
+        id: string;
+        name: string;
+        description: string | null;
+        createdAt: string;
+        listId: string;
+      }>;
+    };
+  }>(`/api/boards/${boardId}`);
+
+  const listIdToName = new Map<string, string>();
+  for (const [name, lid] of Object.entries(listIds)) listIdToName.set(lid, name);
+
+  const wanted = options.status?.toLowerCase();
+  return (board.included?.cards ?? [])
+    .map((card) => ({
+      id: card.id,
+      title: card.name,
+      body: card.description ?? "",
+      status: listIdToName.get(card.listId) ?? "unknown",
+      url: ticketUrl(boardId, card.id),
+      createdAt: card.createdAt,
+    }))
+    .filter((t) => (wanted ? t.status === wanted : true))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
 export async function getTicket(id: string): Promise<PlankaTicket> {
   const res = await api<
     PlankaResponse<{ id: string; name: string; description: string | null; createdAt: string; listId: string }>

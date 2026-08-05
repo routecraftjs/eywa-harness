@@ -40,4 +40,9 @@ export default craft()
   .input({ body: InputSchema })
   .output({ body: ResultSchema })
   .from(direct())
+  // Searching lists the bucket and reads every file, so an agent that probes
+  // the same topic several times in one conversation would re-read the whole
+  // knowledge base each turn. A short TTL keeps repeat lookups cheap while
+  // still surfacing a write from a minute ago.
+  .cache({ ttl: 60_000 })
   .transform(async (body) => ({ results: await findKnowledgeFiles(body) }));
