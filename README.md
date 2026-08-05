@@ -59,6 +59,10 @@ Open the Planka board at <http://localhost:1337>. Create a card under any
 list. Planka fires a webhook to the harness; Aria reads the card and
 decides whether to comment, change its status, or wait for clarification.
 
+The webhook is HMAC-signed and verified by the `http()` source against the
+raw request bytes, before the route runs. An unsigned or tampered request
+is rejected with 401 and never reaches the agent.
+
 ### 3. Knowledge query (chat via MCP)
 
 Connect Claude Desktop or Cursor to `http://localhost:3001/mcp`. Use the
@@ -134,7 +138,6 @@ craft-harness/
 |-- lib/
 |   |-- clients/               Planka REST + S3 (MinIO) clients
 |   |-- approvals.ts           approval card encode/decode (+ tests)
-|   |-- webhook-signature.ts   HMAC verifier (reusable)
 |   `-- schemas/               shared Zod schemas
 |-- knowledge/                 seed markdown files
 |-- compose.yml                full stack (Greenmail + Planka + MinIO + app)
@@ -185,14 +188,6 @@ contributed back upstream:
   for promotion. Same code works against MinIO, AWS S3, R2, B2.
 - **`@routecraft/postgres-events` event-store adapter**. Not in this v0;
   added in a v1.x release that demonstrates event-sourced agents.
-- **Raw request body on the http source**
-  ([#315](https://github.com/routecraftjs/routecraft/issues/315), fix open
-  in PR #523). Webhook providers sign the exact bytes they POST, and the
-  source exposes only the parsed body, so a signature can never be
-  reproduced. Until that lands, the Planka listener in
-  `routes/process-ticket-event.ts` is a custom `Source` wrapping a Node
-  HTTP server purely to keep the raw bytes, and `lib/webhook-signature.ts`
-  verifies them. Both files disappear when #523 ships.
 - **Markdown-with-frontmatter helper**. We use `gray-matter` directly today;
   Routecraft already parses frontmatter for personas internally and could
   expose that as a public util.

@@ -20,6 +20,13 @@ export const craftConfig: CraftConfig = defineConfig({
       anthropic: { apiKey: env.ANTHROPIC_API_KEY },
     },
   },
+  // Inbound HTTP server for the Planka webhook. Per-route signature
+  // verification lives on the route; no global auth strategy is configured
+  // because the only ingress is a signed webhook.
+  http: {
+    host: env.APP_HOST,
+    port: env.APP_PORT,
+  },
   mail: {
     accounts: {
       default: {

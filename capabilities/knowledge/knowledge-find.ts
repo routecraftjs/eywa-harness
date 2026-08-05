@@ -40,9 +40,10 @@ export default craft()
   .input({ body: InputSchema })
   .output({ body: ResultSchema })
   .from(direct())
-  // Searching lists the bucket and reads every file, so an agent that probes
-  // the same topic several times in one conversation would re-read the whole
-  // knowledge base each turn. A short TTL keeps repeat lookups cheap while
-  // still surfacing a write from a minute ago.
-  .cache({ ttl: 60_000 })
+  // Deliberately not cached. Searching does re-read the bucket every call,
+  // but this is the agent's own memory and it writes to it: a cached result
+  // means she appends a fact and then cannot find it, or reports "nothing on
+  // file" for something added moments ago. That was not hypothetical, a 60s
+  // TTL here produced exactly that failure in testing. Correctness on a
+  // mutable store beats saving three object reads.
   .transform(async (body) => ({ results: await findKnowledgeFiles(body) }));
