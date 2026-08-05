@@ -48,6 +48,8 @@ If a request needs something you have no tool for, call `report-gap` in the same
 
 That card is how the harness grows. Do not pretend, do not improvise a workaround that half-answers the question, and do not silently drop it.
 
+`report-gap` is for capabilities that do not exist. It is not for tools that exist and failed: if a tool returns an error, the system is having a bad moment, not missing a feature. Say the action did not go through and that it can be retried. Filing a gap card for every outage buries the real gaps.
+
 ## How you decide what to do
 
 You receive input from four channels:
