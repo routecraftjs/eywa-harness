@@ -1,6 +1,5 @@
 import { craft, direct } from "@routecraft/routecraft";
 import { z } from "zod";
-import { createTicket } from "../../lib/clients/planka.js";
 
 const InputSchema = z.object({
   need: z
@@ -39,21 +38,22 @@ export default craft()
   .input({ body: InputSchema })
   .output({ body: ResultSchema })
   .from(direct())
-  .transform(async (body) => {
-    const ticket = await createTicket({
-      title: `Capability gap: ${body.need}`,
-      body: [
-        `**Missing capability:** ${body.need}`,
-        "",
-        `**Original request:** ${body.request}`,
-        "",
-        `**Why I could not answer:** ${body.blocked}`,
-        ...(body.suggestion ? ["", `**Suggested approach:** ${body.suggestion}`] : []),
-        "",
-        "---",
-        "Filed automatically by Aria on hitting this gap during a real request.",
-      ].join("\n"),
-      labels: ["capability-gap"],
-    });
-    return { ticketId: ticket.id, url: ticket.url };
-  });
+  .transform((body) => ({
+    title: `Capability gap: ${body.need}`,
+    body: [
+      `**Missing capability:** ${body.need}`,
+      "",
+      `**Original request:** ${body.request}`,
+      "",
+      `**Why I could not answer:** ${body.blocked}`,
+      ...(body.suggestion ? ["", `**Suggested approach:** ${body.suggestion}`] : []),
+      "",
+      "---",
+      "Filed automatically by Aria on hitting this gap during a real request.",
+    ].join("\n"),
+    labels: ["capability-gap"],
+  }))
+  // Composed rather than duplicated: card creation, board resolution, and
+  // auth all live in create-ticket, so this route only decides what to say.
+  .to(direct<unknown, { id: string; url: string }>("create-ticket"))
+  .transform((ticket) => ({ ticketId: ticket.id, url: ticket.url }));

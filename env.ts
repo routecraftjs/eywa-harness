@@ -24,6 +24,11 @@ const EnvSchema = z.object({
   PLANKA_BOARD_NAME: z.string().default("Tasks"),
   PLANKA_WEBHOOK_SECRET: z.string().default("dev-secret-change-me"),
   PLANKA_APPROVAL_LIST: z.string().default("Approved"),
+  // Planka issues a bearer token from a login call; cache it rather than
+  // re-authenticating on every board operation.
+  PLANKA_TOKEN_TTL_MS: z.coerce.number().default(55 * 60 * 1000),
+  // Project, board, and list ids never move during a demo run.
+  PLANKA_BOARD_TTL_MS: z.coerce.number().default(10 * 60 * 1000),
 
   // Where the deterministic weekly digest is sent.
   DIGEST_RECIPIENT: z.string().default("demo@harness.local"),

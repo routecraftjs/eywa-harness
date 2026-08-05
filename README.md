@@ -128,15 +128,17 @@ calls tools, and replies through whichever channel makes sense.
 ```
 craft-harness/
 |-- agents/aria.md             persona system prompt + tool list
-|-- capabilities/              eleven tools, one per file
-|   |-- tickets/               Planka kanban operations + report-gap
+|-- capabilities/              agent tools, one per file
+|   |-- tickets/               kanban operations + report-gap
 |   |-- email/                 send-email
 |   |-- approvals/             request-approval (human-in-the-loop)
 |   |-- knowledge/             markdown-on-S3 read+write
+|   |-- planka/                internal: cached token + board resolution
 |   `-- mcp/chat-with-aria.ts  MCP entrypoint
 |-- routes/                    inbox, ticket webhook, digest, heartbeat
 |-- lib/
-|   |-- clients/               Planka REST + S3 (MinIO) clients
+|   |-- clients/s3.ts          S3 (MinIO) client
+|   |-- planka.ts              pure request/response mapping, no IO
 |   |-- approvals.ts           approval card encode/decode (+ tests)
 |   `-- schemas/               shared Zod schemas
 |-- knowledge/                 seed markdown files
@@ -145,6 +147,21 @@ craft-harness/
 |-- craft.config.ts            Routecraft config: agent, mail, mcp
 `-- index.ts                   routes + capabilities exports
 ```
+
+## Talking to a vendor API without a client library
+
+Every Planka call goes through the `http()` adapter inside a route. There is
+no hand-written REST client, and that is the point: `lib/planka.ts` holds
+only pure request and response mapping, while auth, retries, and composition
+belong to the pipeline.
+
+Two internal routes carry what every board call needs. `planka-token` logs in
+and caches the bearer token with a step-scope `.cache()`, so one login serves
+the whole harness. `planka-board` resolves project to board to lists through
+chained `.enrich()` steps, each adding what it learned to the body.
+
+Capabilities then compose: `report-gap` and `request-approval` do not know how
+a card reaches the board, they simply `.to(direct("create-ticket"))`.
 
 ## Both execution modes, on purpose
 

@@ -1,6 +1,5 @@
 import { craft, direct } from "@routecraft/routecraft";
 import { z } from "zod";
-import { createTicket } from "../../lib/clients/planka.js";
 import {
   ApprovalActionSchema,
   renderApprovalCard,
@@ -38,15 +37,16 @@ export default craft()
   .input({ body: InputSchema })
   .output({ body: ResultSchema })
   .from(direct())
-  .transform(async (body) => {
-    const ticket = await createTicket({
-      title: `Approve email: ${body.action.subject}`,
-      body: renderApprovalCard(body.action, body.reason),
-      labels: ["approval"],
-    });
-    return {
-      ticketId: ticket.id,
-      url: ticket.url,
-      status: "awaiting-approval" as const,
-    };
-  });
+  .transform((body) => ({
+    title: `Approve email: ${body.action.subject}`,
+    body: renderApprovalCard(body.action, body.reason),
+    labels: ["approval"],
+  }))
+  // Composed with create-ticket: this route owns only what an approval card
+  // says, not how a card gets onto the board.
+  .to(direct<unknown, { id: string; url: string }>("create-ticket"))
+  .transform((ticket) => ({
+    ticketId: ticket.id,
+    url: ticket.url,
+    status: "awaiting-approval" as const,
+  }));

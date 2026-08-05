@@ -1,7 +1,7 @@
-import { craft, cron, mail } from "@routecraft/routecraft";
+import { craft, cron, direct, mail, only } from "@routecraft/routecraft";
 import { env } from "../env.js";
-import { listTickets } from "../lib/clients/planka.js";
 import { findKnowledgeFiles } from "../lib/clients/s3.js";
+import type { TicketSummary } from "../lib/planka.js";
 
 /**
  * Monday-morning board digest. Deterministic: no agent, no LLM.
@@ -18,11 +18,17 @@ import { findKnowledgeFiles } from "../lib/clients/s3.js";
 export default craft()
   .id("weekly-digest")
   .from(cron("0 8 * * MON"))
-  .transform(async () => {
-    const [tickets, knowledge] = await Promise.all([
-      listTickets(),
-      findKnowledgeFiles({ limit: 50 }),
-    ]);
+  // cron delivers an empty body; give the enrichments something to merge into.
+  .transform(() => ({}))
+  // The board comes from the same capability the agent uses, so the digest
+  // and the agent can never disagree about what is on it.
+  .enrich(
+    direct<unknown, { tickets: TicketSummary[] }>("list-tickets"),
+    only((r: { tickets: TicketSummary[] }) => r.tickets, "tickets"),
+  )
+  .transform(async (body) => {
+    const tickets = body.tickets;
+    const knowledge = await findKnowledgeFiles({ limit: 50 });
 
     const byStatus = new Map<string, number>();
     for (const ticket of tickets) {

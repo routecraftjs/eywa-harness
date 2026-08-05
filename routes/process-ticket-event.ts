@@ -1,8 +1,16 @@
 import { agent } from "@routecraft/ai";
-import { craft, http, mail, otherwise, when } from "@routecraft/routecraft";
+import {
+  craft,
+  direct,
+  http,
+  mail,
+  only,
+  otherwise,
+  when,
+} from "@routecraft/routecraft";
 import { env } from "../env.js";
-import { commentOnTicket, getTicket } from "../lib/clients/planka.js";
-import { parseApprovalAction, type ApprovalAction } from "../lib/approvals.js";
+import type { TicketSummary } from "../lib/planka.js";
+import { parseApprovalAction } from "../lib/approvals.js";
 
 /**
  * Inbound ticket event from the Planka mock board.
@@ -42,55 +50,60 @@ export default craft()
       },
     }),
   )
-  // Resolve the card's current list before branching, because a choice
-  // predicate is synchronous and the webhook payload does not name the list.
-  // A lookup failure is not fatal: the event simply goes to the agent.
-  .transform(async (body: PlankaWebhookPayload) => {
-    const base = {
-      channel: "ticket" as const,
-      event: body.event,
-      ticketId: body.data?.item?.id,
-      title: body.data?.item?.name,
-      description: body.data?.item?.description ?? "",
-      approved: null as ApprovalAction | null,
-    };
-    if (!base.ticketId) return base;
-    try {
-      const ticket = await getTicket(base.ticketId);
-      if (ticket.status.toLowerCase() !== env.PLANKA_APPROVAL_LIST.toLowerCase()) {
-        return base;
-      }
-      return { ...base, approved: parseApprovalAction(ticket.body) };
-    } catch {
-      return base;
-    }
-  })
+  // Cheap synchronous pre-filter: does the card even carry an approval
+  // payload? Ordinary board traffic never does, so it skips the branch and
+  // the extra Planka call entirely.
+  .transform((body: PlankaWebhookPayload) => ({
+    channel: "ticket" as const,
+    event: body.event,
+    id: body.data?.item?.id ?? "",
+    title: body.data?.item?.name,
+    description: body.data?.item?.description ?? "",
+    candidate: parseApprovalAction(body.data?.item?.description) !== null,
+  }))
   .choice(
-    // A human moved a card carrying a drafted action into the approval list.
-    // That move is the authorisation, so this branch executes it directly:
-    // the agent is not consulted and cannot approve its own request.
     when(
-      (ex) => ex.body.approved !== null,
+      (ex) => ex.body.candidate && ex.body.id !== "",
       (b) =>
         b
+          // Re-read the card from Planka rather than trusting the webhook:
+          // the authorisation is the card's CURRENT list, and the payload
+          // that gets sent must be the one on the board right now.
+          .enrich(
+            direct<unknown, TicketSummary>("get-ticket"),
+            only((ticket: TicketSummary) => ticket, "ticket"),
+          )
+          // Not yet approved: this is Aria's own draft sitting where she
+          // left it, so drop it. Without this she would be woken by the
+          // very card she just filed.
+          .filter(
+            (ex) =>
+              ex.body.ticket.status.toLowerCase() ===
+                env.PLANKA_APPROVAL_LIST.toLowerCase() &&
+              parseApprovalAction(ex.body.ticket.body) !== null,
+          )
+          .process((ex) => {
+            const action = parseApprovalAction(ex.body.ticket.body)!;
+            return {
+              ...ex,
+              headers: { ...ex.headers, "x-approval-ticket": ex.body.id },
+              body: {
+                to: action.to,
+                subject: action.subject,
+                text: action.body,
+                inReplyTo: undefined,
+              },
+            };
+          })
+          .to(mail({ account: "default" }))
           .process((ex) => ({
             ...ex,
-            headers: { ...ex.headers, "x-approval-ticket": ex.body.ticketId },
             body: {
-              to: ex.body.approved!.to,
-              subject: ex.body.approved!.subject,
-              text: ex.body.approved!.body,
+              id: ex.headers["x-approval-ticket"] as string,
+              text: "Approved and sent. Recorded by the harness, not by Aria.",
             },
           }))
-          .to(mail({ account: "default" }))
-          .process(async (ex) => {
-            const ticketId = ex.headers["x-approval-ticket"] as string;
-            await commentOnTicket(
-              ticketId,
-              "Approved and sent. Recorded by the harness, not by Aria.",
-            );
-            return ex;
-          })
+          .to(direct("comment-on-ticket"))
           .transform((): Handled => ({ handled: "approved-and-sent" })),
     ),
     otherwise((b) =>
