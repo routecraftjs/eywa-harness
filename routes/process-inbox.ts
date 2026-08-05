@@ -1,7 +1,6 @@
 import { agent } from "@routecraft/ai";
 import { craft, mail, MailHeaders } from "@routecraft/routecraft";
 import { env } from "../env.js";
-import { imapOptions } from "../lib/mail-config.js";
 
 /**
  * Inbound email entry point.
@@ -22,7 +21,7 @@ export default craft()
   .id("process-inbox")
   .from(
     mail("INBOX", {
-      ...imapOptions,
+      account: "default",
       unseen: true,
       markSeen: true,
       pollIntervalMs: env.MAIL_POLL_INTERVAL_MS,

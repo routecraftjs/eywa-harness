@@ -1,6 +1,5 @@
 import { craft, direct, mail } from "@routecraft/routecraft";
 import { z } from "zod";
-import { smtpOptions } from "../../lib/mail-config.js";
 
 const InputSchema = z.object({
   to: z.string().email().describe("Recipient email address."),
@@ -27,4 +26,4 @@ export default craft()
     text: body.body,
     inReplyTo: body.inReplyTo,
   }))
-  .to(mail(smtpOptions));
+  .to(mail({ account: "default" }));

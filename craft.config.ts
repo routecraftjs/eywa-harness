@@ -20,9 +20,25 @@ export const craftConfig: CraftConfig = defineConfig({
       anthropic: { apiKey: env.ANTHROPIC_API_KEY },
     },
   },
-  // Mail connection options live in lib/mail-config.ts and ride on each
-  // adapter: the CraftConfig.mail accounts block is silently ignored on
-  // 0.6.0-canary.20 (no config applier registered for "mail").
+  mail: {
+    accounts: {
+      default: {
+        imap: {
+          host: env.MAIL_HOST,
+          port: env.MAIL_IMAP_PORT,
+          secure: env.MAIL_TLS,
+          auth: { user: env.MAIL_USER, pass: env.MAIL_PASSWORD },
+        },
+        smtp: {
+          host: env.MAIL_HOST,
+          port: env.MAIL_SMTP_PORT,
+          secure: env.MAIL_TLS,
+          auth: { user: env.MAIL_USER, pass: env.MAIL_PASSWORD },
+          from: env.MAIL_USER,
+        },
+      },
+    },
+  },
   mcp: {
     name: "craft-harness",
     version: "0.1.0",
