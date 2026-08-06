@@ -97,6 +97,20 @@ carrying the original request, what she tried, and what would have solved
 it. A real request that hit a real wall is a better backlog item than any
 speculative roadmap entry, and the card is the spec.
 
+### 7. Ask it about Routecraft itself
+
+Before you configure a single backend, ask the agent *"What is Routecraft?"*
+and it answers from the live documentation.
+
+The harness ships **no copy of the docs**. `ask-docs` reads the `llms.txt`
+index that routecraft.dev and devoptix.nl already publish, ranks the pages a
+question is about, and fetches that page's markdown. An answer is therefore
+never staler than the website, and a docs fix needs no harness release.
+
+This is also the one place `.cache()` genuinely belongs: the docs are remote,
+read-only, and change on a release cadence. Contrast the knowledge base,
+which the agent writes to and so must never be cached.
+
 ## Architecture
 
 ```

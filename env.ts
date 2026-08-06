@@ -41,6 +41,27 @@ const EnvSchema = z.object({
   S3_KNOWLEDGE_BUCKET: z.string().default("knowledge"),
   S3_FORCE_PATH_STYLE: z.coerce.boolean().default(true),
 
+  // Public documentation sources. Both sites publish an `llms.txt` index
+  // whose entries link to raw markdown, so the harness needs no bundled
+  // copy of the docs and never serves a stale answer.
+  DOCS_ROUTECRAFT_INDEX: z
+    .string()
+    .default("https://routecraft.dev/llms.txt"),
+  DOCS_DEVOPTIX_INDEX: z.string().default("https://devoptix.nl/llms.txt"),
+  DOCS_CACHE_TTL_MS: z.coerce.number().default(60 * 60 * 1000),
+
+  // Identity (Dex by default). OIDC_ISSUER must match the `issuer` in
+  // dex/config.yaml exactly: it is compared against the token's `iss`.
+  OIDC_ISSUER: z.string().default("http://dex:5556/dex"),
+  OIDC_JWKS_URL: z.string().default("http://dex:5556/dex/keys"),
+  OIDC_AUDIENCE: z.string().default("craft-harness"),
+  /**
+   * Leave the MCP endpoint and capability scopes unenforced. Off by default
+   * so `docker compose up` still works with no token, on for the identity
+   * scenario. Never set this true anywhere reachable from a network.
+   */
+  AUTH_DISABLED: z.coerce.boolean().default(false),
+
   // HTTP (webhook receiver + MCP transport)
   APP_HOST: z.string().default("0.0.0.0"),
   APP_PORT: z.coerce.number().default(3000),

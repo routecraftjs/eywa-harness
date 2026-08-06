@@ -16,6 +16,10 @@ import requestApproval from "./approvals/request-approval.js";
 import plankaToken from "./planka/planka-token.js";
 import plankaBoard from "./planka/planka-board.js";
 
+// Docs (live, fetched from published llms.txt indexes)
+import docsIndex from "./docs/docs-index.js";
+import askDocs from "./docs/ask-docs.js";
+
 // Knowledge
 import knowledgeFind from "./knowledge/knowledge-find.js";
 import knowledgeRead from "./knowledge/knowledge-read.js";
@@ -39,9 +43,11 @@ export default [
   knowledgeRead,
   knowledgeWrite,
   knowledgeAppend,
+  askDocs,
   // Internal plumbing, reached only by other routes via direct()
   plankaToken,
   plankaBoard,
+  docsIndex,
   // External entry point
   chatWithAria,
 ];

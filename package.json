@@ -32,8 +32,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@routecraft/testing": "0.6.0-canary-20260805180433",
     "@routecraft/eslint-plugin-routecraft": "0.6.0-canary-20260805180433",
+    "@routecraft/testing": "0.6.0-canary-20260805180433",
     "@types/mailparser": "^3.4.6",
     "@types/node": "^25.3.5",
     "@types/nodemailer": "^8.0.0",
