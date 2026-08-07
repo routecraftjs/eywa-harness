@@ -1,5 +1,7 @@
 import { craft, direct } from "@routecraft/routecraft";
 import { z } from "zod";
+import { requires } from "../../lib/identity.js";
+import { SCOPES } from "../../lib/scopes.js";
 
 const InputSchema = z.object({
   need: z
@@ -39,6 +41,7 @@ export default craft()
   )
   .input({ body: InputSchema })
   .output({ body: ResultSchema })
+  .authorize(requires(SCOPES.TICKETS_WRITE))
   .from(direct())
   .transform((body) => ({
     title: `Capability gap: ${body.need}`,

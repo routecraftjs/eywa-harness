@@ -1,5 +1,6 @@
 import { agent } from "@routecraft/ai";
 import { craft, cron } from "@routecraft/routecraft";
+import { scheduled } from "../lib/identity.js";
 
 /**
  * Daily wake-up for Aria.
@@ -9,12 +10,17 @@ import { craft, cron } from "@routecraft/routecraft";
  * what to do beyond a standing instruction, so what actually happens is her
  * decision, made against the live board and knowledge base.
  *
- * Deliberately conservative: she is told to look and to leave a comment,
- * never to act on anyone's behalf without being asked.
+ * Deliberately conservative in two ways. She is told to look and to leave a
+ * comment, never to act on anyone's behalf without being asked; and the
+ * authority she runs on is minted here, on a cron source, which is the only
+ * place standing authority may come from. Authority an inbound message can
+ * trigger is not standing authority, it is an open door.
  */
 export default craft()
   .id("heartbeat")
   .from(cron("0 9 * * MON-FRI"))
+  // eslint-disable-next-line @routecraft/routecraft/restrict-principal-minting -- an internal cron trigger, the only sanctioned source of standing authority. Nothing inbound can reach this line
+  .authenticate(() => scheduled("heartbeat"))
   .transform(() => ({
     channel: "heartbeat" as const,
     text: [

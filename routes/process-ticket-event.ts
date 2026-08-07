@@ -11,6 +11,7 @@ import {
 import { env } from "../env.js";
 import type { TicketSummary } from "../lib/planka.js";
 import { parseApprovalAction } from "../lib/approvals.js";
+import { approvedByBoard, ARIA, scheduled } from "../lib/identity.js";
 
 /**
  * Inbound ticket event from the Planka mock board.
@@ -19,6 +20,12 @@ import { parseApprovalAction } from "../lib/approvals.js";
  * signed with `PLANKA_WEBHOOK_SECRET` via HMAC-SHA256 (hex). The source
  * verifies that signature against the raw request bytes and rejects with 401
  * before the route runs, so nothing below executes on an unsigned request.
+ *
+ * The two branches run on deliberately different authority. The approval
+ * branch mints `mail:send`, and it does so only after the card has been
+ * re-read and found sitting in the approved list: a human put it there, and
+ * Aria has no capability that can. The agent branch never sees that scope, so
+ * a card cannot talk her into sending anything.
  */
 /** Both choice branches converge on this so the route has one output type. */
 interface Handled {
@@ -82,6 +89,18 @@ export default craft()
                 env.PLANKA_APPROVAL_LIST.toLowerCase() &&
               parseApprovalAction(ex.body.ticket.body) !== null,
           )
+          // Only now is mail:send minted: HMAC verified, and a human moved
+          // the card. Neither fact alone is enough, and the agent supplies
+          // neither of them.
+          // Sanctioned minting site: reached only after the HMAC verified AND
+          // the card was re-read from the board in the approved list, which
+          // only a human can arrange.
+          //
+          // The restrict-principal-minting lint rule does NOT see this call,
+          // because it sits inside a choice branch rather than on the route's
+          // top-level chain. Minting inside a branch is exactly where it most
+          // wants looking at; reported upstream.
+          .authenticate((ex) => approvedByBoard(ex.body.id))
           .process((ex) => {
             const action = parseApprovalAction(ex.body.ticket.body)!;
             return {
@@ -107,6 +126,15 @@ export default craft()
           .transform((): Handled => ({ handled: "approved-and-sent" })),
     ),
     otherwise((b) =>
-      b.to(agent("aria")).transform((): Handled => ({ handled: "agent" })),
+      b
+        // Board traffic is not a person. Aria triages it on the harness's own
+        // authority, which cannot send mail.
+        // Sanctioned minting site (also invisible to the lint rule, see
+        // above): the harness's own narrow authority for triage, which
+        // cannot send mail.
+        .authenticate(() => scheduled("ticket-event"))
+        .delegate(() => ({ actor: ARIA }))
+        .to(agent("aria"))
+        .transform((): Handled => ({ handled: "agent" })),
     ),
   );

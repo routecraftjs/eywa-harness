@@ -1,6 +1,7 @@
 import { agent } from "@routecraft/ai";
 import { craft, mail, MailHeaders } from "@routecraft/routecraft";
 import { env } from "../env.js";
+import { ARIA, mailbox } from "../lib/identity.js";
 
 /**
  * Inbound email entry point.
@@ -16,6 +17,12 @@ import { env } from "../env.js";
  * The harness has no `choice` block on the inbox today: every email goes
  * straight to the agent. As patterns emerge, deterministic sub-routes can
  * earn their way in by adding `when()` predicates here.
+ *
+ * A run triggered by mail acts as the MAILBOX, not as the sender. A `From:`
+ * header names who wrote in and says nothing about what they may ask an agent
+ * to do, and this demo's mail server will accept any address anyone claims.
+ * The mailbox identity therefore has no `mail:send`: Aria can draft a reply
+ * from an email, and a human moves a card to actually send it.
  */
 export default craft()
   .id("process-inbox")
@@ -27,6 +34,9 @@ export default craft()
       pollIntervalMs: env.MAIL_POLL_INTERVAL_MS,
     }),
   )
+  // eslint-disable-next-line @routecraft/routecraft/restrict-principal-minting -- the sanctioned mail channel boundary. Mints the mailbox's own identity, never the sender's, and that identity cannot send mail
+  .authenticate((ex) => mailbox(String(ex.headers[MailHeaders.FROM] ?? "")))
+  .delegate(() => ({ actor: ARIA }))
   .process((ex) => ({
     ...ex,
     body: {

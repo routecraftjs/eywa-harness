@@ -6,6 +6,10 @@
 # There is no storage service. The knowledge base is a directory of markdown
 # files bind-mounted from this repository, read and written through Routecraft's
 # file() and directory() adapters. Point KNOWLEDGE_DIR at any folder you like.
+#
+# Dex is a real OIDC provider, not a stub, so the framework genuinely fetches a
+# JWKS and verifies signatures. It runs by default and costs nothing until you
+# set AUTH_DISABLED=false.
 
 name: craft-harness
 
@@ -66,6 +70,27 @@ services:
       timeout: 5s
       retries: 12
 
+  dex:
+    image: ghcr.io/dexidp/dex:v2.44.0
+    command: ["dex", "serve", "/etc/dex/config.yaml"]
+    volumes:
+      - ./dex/config.yaml:/etc/dex/config.yaml:ro
+    ports:
+      - "5556:5556"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--quiet",
+          "--tries=1",
+          "--spider",
+          "http://localhost:5556/dex/.well-known/openid-configuration",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
   app:
     build: .
     # The app exits fatally if IMAP becomes unreachable (mail source retries,
@@ -75,6 +100,8 @@ services:
       greenmail:
         condition: service_healthy
       planka:
+        condition: service_healthy
+      dex:
         condition: service_healthy
     environment:
       LOG_LEVEL: info
@@ -102,6 +129,15 @@ services:
 
       # Knowledge base
       KNOWLEDGE_DIR: /app/knowledge
+
+      # Identity. Set AUTH_DISABLED=false in .env to make the MCP endpoint
+      # demand a real Dex token; scopes are enforced on capabilities either
+      # way. See "Identity, and why the agent is not in the trust path" in
+      # the README.
+      OIDC_ISSUER: http://dex:5556/dex
+      OIDC_JWKS_URL: http://dex:5556/dex/keys
+      OIDC_AUDIENCE: craft-harness
+      AUTH_DISABLED: ${AUTH_DISABLED:-true}
 
       # HTTP
       APP_HOST: 0.0.0.0

@@ -1,5 +1,5 @@
 import { agents } from "@routecraft/ai";
-import { defineConfig, type CraftConfig } from "@routecraft/routecraft";
+import { defineConfig, jwks, type CraftConfig } from "@routecraft/routecraft";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { env } from "./env.js";
@@ -74,5 +74,24 @@ export const craftConfig: CraftConfig = defineConfig({
     transport: "http",
     host: env.APP_HOST,
     port: env.MCP_PORT,
+    /**
+     * Bearer tokens are verified against Dex's JWKS before any route runs, so
+     * `chat-with-aria` receives a caller the framework has already
+     * authenticated rather than a name someone typed.
+     *
+     * `AUTH_DISABLED` removes the verifier entirely instead of loosening it.
+     * A verifier that sometimes accepts an unsigned token is a verifier
+     * nobody can reason about; an absent one is at least honest, and the
+     * route mints the weak demo identity in its place.
+     */
+    ...(env.AUTH_DISABLED
+      ? {}
+      : {
+          auth: jwks({
+            jwksUrl: env.OIDC_JWKS_URL,
+            issuer: env.OIDC_ISSUER,
+            audience: env.OIDC_AUDIENCE,
+          }),
+        }),
   },
 });

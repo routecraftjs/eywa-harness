@@ -17,6 +17,13 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { testContext, type TestContext } from "@routecraft/testing";
+import {
+  authenticate,
+  delegate,
+  HeadersKeys,
+  type Principal,
+} from "@routecraft/routecraft";
+import { SCOPES } from "../../lib/scopes.js";
 
 const KNOWLEDGE_DIR = fs.mkdtempSync(
   path.join(os.tmpdir(), "craft-knowledge-"),
@@ -35,6 +42,30 @@ fs.writeFileSync(
   "---\ntitle: Team\ntags:\n  - people\n---\nBart is a backend engineer.\n",
 );
 fs.writeFileSync(path.join(KNOWLEDGE_DIR, "notes.txt"), "not markdown");
+
+/**
+ * A caller with the given scopes, with Aria acting on their behalf.
+ *
+ * The capabilities declare `.authorize()`, so a bare `sendDirect` is refused,
+ * and rightly: an anonymous call is exactly what the check exists to stop.
+ * Building the principal the way the framework does keeps the test honest,
+ * since a hand-written header object would not be trusted either.
+ */
+const asCaller = (...scopes: string[]): Record<string, Principal> => ({
+  [HeadersKeys.AUTH_PRINCIPAL]: delegate(
+    authenticate({
+      kind: "custom",
+      scheme: "test",
+      subject: "demo@harness.local",
+      subjectProfile: "user",
+      scopes,
+    }),
+    { subject: "agent:aria", issuer: "craft-harness" },
+  ),
+});
+
+const READER = asCaller(SCOPES.KB_READ);
+const WRITER = asCaller(SCOPES.KB_READ, SCOPES.KB_WRITE);
 
 interface FindResult {
   results: Array<{
@@ -66,7 +97,7 @@ async function contextFor(dir: string): Promise<TestContext> {
 }
 
 const find = (input: Record<string, unknown>) =>
-  ctx.client.sendDirect("knowledge-find", input) as Promise<FindResult>;
+  ctx.client.sendDirect("knowledge-find", input, READER) as Promise<FindResult>;
 
 beforeAll(async () => {
   ctx = await contextFor(KNOWLEDGE_DIR);
@@ -106,9 +137,11 @@ describe("knowledge-find", () => {
 
 describe("knowledge-read", () => {
   it("splits frontmatter from body", async () => {
-    const file = (await ctx.client.sendDirect("knowledge-read", {
-      path: "team.md",
-    })) as { path: string; frontmatter: { title: string }; content: string };
+    const file = (await ctx.client.sendDirect(
+      "knowledge-read",
+      { path: "team.md" },
+      READER,
+    )) as { path: string; frontmatter: { title: string }; content: string };
     expect(file.frontmatter.title).toBe("Team");
     expect(file.content).toContain("backend engineer");
   });
@@ -117,18 +150,26 @@ describe("knowledge-read", () => {
   // knowledge tool and the rest of the filesystem.
   it("refuses a path that escapes the knowledge base", async () => {
     await expect(
-      ctx.client.sendDirect("knowledge-read", { path: "../../etc/passwd.md" }),
+      ctx.client.sendDirect(
+        "knowledge-read",
+        { path: "../../etc/passwd.md" },
+        READER,
+      ),
     ).rejects.toThrow();
   });
 });
 
 describe("writing", () => {
   it("writes a file the very next search can find", async () => {
-    await ctx.client.sendDirect("knowledge-write", {
-      path: "vendors.md",
-      frontmatter: { title: "Vendors", tags: ["ops"] },
-      body: "Acme Supplies is our stationery vendor.",
-    });
+    await ctx.client.sendDirect(
+      "knowledge-write",
+      {
+        path: "vendors.md",
+        frontmatter: { title: "Vendors", tags: ["ops"] },
+        body: "Acme Supplies is our stationery vendor.",
+      },
+      WRITER,
+    );
     const found = await find({ query: "stationery vendor", limit: 20 });
     expect(found.results.map((r) => r.path)).toEqual(["vendors.md"]);
   });
@@ -136,10 +177,11 @@ describe("writing", () => {
   // The failure this guards against is specific and was observed: cache the
   // search and the agent records a fact, then reports it has nothing on file.
   it("appends a fact the very next search can find", async () => {
-    await ctx.client.sendDirect("knowledge-append", {
-      path: "team.md",
-      section: "- Anna joined as a frontend engineer.",
-    });
+    await ctx.client.sendDirect(
+      "knowledge-append",
+      { path: "team.md", section: "- Anna joined as a frontend engineer." },
+      WRITER,
+    );
     const found = await find({ query: "Anna frontend", limit: 20 });
     expect(found.results.map((r) => r.path)).toEqual(["team.md"]);
   });
@@ -155,12 +197,35 @@ describe("an empty knowledge base", () => {
   it("answers with no results rather than failing", async () => {
     const empty = await contextFor(EMPTY_DIR);
     try {
-      const found = (await empty.client.sendDirect("knowledge-find", {
-        limit: 20,
-      })) as FindResult;
+      const found = (await empty.client.sendDirect(
+        "knowledge-find",
+        { limit: 20 },
+        READER,
+      )) as FindResult;
       expect(found.results).toEqual([]);
     } finally {
       await empty.stop();
     }
+  });
+});
+
+describe("authorization", () => {
+  it("refuses an anonymous call", async () => {
+    await expect(
+      ctx.client.sendDirect("knowledge-find", { limit: 20 }),
+    ).rejects.toThrow();
+  });
+
+  // The interesting half: a caller who is authenticated and may read is
+  // still not a caller who may write. Nothing about this is Aria's decision.
+  it("refuses a reader who tries to write", async () => {
+    await expect(
+      ctx.client.sendDirect(
+        "knowledge-write",
+        { path: "sneaky.md", frontmatter: {}, body: "nope" },
+        READER,
+      ),
+    ).rejects.toThrow();
+    expect(fs.existsSync(path.join(KNOWLEDGE_DIR, "sneaky.md"))).toBe(false);
   });
 });

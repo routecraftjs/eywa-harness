@@ -1,5 +1,6 @@
 import { craft, cron, direct, mail, only } from "@routecraft/routecraft";
 import { env } from "../env.js";
+import { scheduled } from "../lib/identity.js";
 import type { TicketSummary } from "../lib/planka.js";
 
 /**
@@ -17,6 +18,8 @@ import type { TicketSummary } from "../lib/planka.js";
 export default craft()
   .id("weekly-digest")
   .from(cron("0 8 * * MON"))
+  // eslint-disable-next-line @routecraft/routecraft/restrict-principal-minting -- an internal cron trigger, the only sanctioned source of standing authority. Nothing inbound can reach this line
+  .authenticate(() => scheduled("weekly-digest"))
   // cron delivers an empty body. This one doubles as the request body for the
   // enrichment below, which is why it carries a limit.
   .transform(() => ({ limit: 50 }))

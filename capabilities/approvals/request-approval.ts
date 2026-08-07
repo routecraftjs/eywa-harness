@@ -4,6 +4,8 @@ import {
   ApprovalActionSchema,
   renderApprovalCard,
 } from "../../lib/approvals.js";
+import { requires } from "../../lib/identity.js";
+import { SCOPES } from "../../lib/scopes.js";
 
 const InputSchema = z.object({
   reason: z
@@ -36,6 +38,7 @@ export default craft()
   )
   .input({ body: InputSchema })
   .output({ body: ResultSchema })
+  .authorize(requires(SCOPES.MAIL_DRAFT))
   .from(direct())
   .transform((body) => ({
     title: `Approve email: ${body.action.subject}`,

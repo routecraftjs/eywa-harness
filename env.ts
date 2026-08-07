@@ -1,5 +1,22 @@
 import { z } from "zod";
 
+/**
+ * A boolean from the environment.
+ *
+ * NOT `z.coerce.boolean()`, which is `Boolean(value)` and therefore turns the
+ * string `"false"` into `true`. Every non-empty string is truthy, so the one
+ * spelling people actually reach for to switch something off is the one that
+ * silently switches it on. `compose.yml` sets `MAIL_TLS: "false"`, so this
+ * was not a hypothetical.
+ */
+const bool = (fallback: boolean) =>
+  z
+    .string()
+    .optional()
+    .transform((value) =>
+      value === undefined ? fallback : /^(1|true|yes|on)$/i.test(value.trim()),
+    );
+
 const EnvSchema = z.object({
   LOG_LEVEL: z.string().default("info"),
 
@@ -13,7 +30,7 @@ const EnvSchema = z.object({
   MAIL_SMTP_PORT: z.coerce.number().default(3025),
   MAIL_USER: z.string().default("aria@harness.local"),
   MAIL_PASSWORD: z.string().default("aria"),
-  MAIL_TLS: z.coerce.boolean().default(false),
+  MAIL_TLS: bool(false),
   MAIL_POLL_INTERVAL_MS: z.coerce.number().default(5000),
 
   // Planka (mock ticket system)
@@ -51,11 +68,16 @@ const EnvSchema = z.object({
   OIDC_JWKS_URL: z.string().default("http://dex:5556/dex/keys"),
   OIDC_AUDIENCE: z.string().default("craft-harness"),
   /**
-   * Leave the MCP endpoint and capability scopes unenforced. Off by default
-   * so `docker compose up` still works with no token, on for the identity
-   * scenario. Never set this true anywhere reachable from a network.
+   * Accept MCP calls that carry no bearer token, treating them as the demo
+   * user. On by default so the quick start works before anyone has met Dex;
+   * set it false to make the MCP endpoint demand a real token.
+   *
+   * It does NOT switch authorization off. Every capability checks scopes
+   * either way, and every channel mints a principal; this only decides
+   * whether the MCP edge insists the caller prove who they are. Never set it
+   * true anywhere reachable from a network.
    */
-  AUTH_DISABLED: z.coerce.boolean().default(false),
+  AUTH_DISABLED: bool(true),
 
   // HTTP (webhook receiver + MCP transport)
   APP_HOST: z.string().default("0.0.0.0"),

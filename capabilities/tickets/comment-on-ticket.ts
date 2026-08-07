@@ -9,6 +9,8 @@ import {
 import { z } from "zod";
 import { env } from "../../env.js";
 import { authHeader } from "../../lib/planka.js";
+import { requires } from "../../lib/identity.js";
+import { SCOPES } from "../../lib/scopes.js";
 
 const InputSchema = z.object({
   id: z.string().describe("The ticket id to comment on."),
@@ -42,6 +44,7 @@ export default craft()
   )
   .input({ body: InputSchema })
   .output({ body: OutputSchema })
+  .authorize(requires(SCOPES.TICKETS_WRITE))
   .from(direct())
   // No board lookup: commenting addresses the card by id, so the ids this
   // route needs are already in the request.

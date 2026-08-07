@@ -14,6 +14,8 @@ import {
   type PlankaCard,
 } from "../../lib/planka.js";
 import { TicketSchema } from "../../lib/schemas/ticket.js";
+import { requires } from "../../lib/identity.js";
+import { SCOPES } from "../../lib/scopes.js";
 
 const InputSchema = z.object({
   id: z.string().describe("The ticket id (Planka card id)."),
@@ -29,6 +31,7 @@ export default craft()
   )
   .input({ body: InputSchema })
   .output({ body: TicketSchema })
+  .authorize(requires(SCOPES.TICKETS_READ))
   .from(direct())
   .enrich(
     direct<unknown, string>("planka-token"),

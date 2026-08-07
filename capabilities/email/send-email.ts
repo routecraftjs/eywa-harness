@@ -1,5 +1,7 @@
 import { craft, direct, mail } from "@routecraft/routecraft";
 import { z } from "zod";
+import { requires } from "../../lib/identity.js";
+import { SCOPES } from "../../lib/scopes.js";
 
 const InputSchema = z.object({
   to: z.string().email().describe("Recipient email address."),
@@ -22,6 +24,7 @@ export default craft()
     "Send a plain-text email through the demo mail server. Use sparingly: only when the requester actually needs an email reply.",
   )
   .input({ body: InputSchema })
+  .authorize(requires(SCOPES.MAIL_SEND))
   .from(direct())
   .transform((body) => ({
     to: body.to,

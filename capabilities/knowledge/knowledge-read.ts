@@ -5,6 +5,8 @@ import {
   parseKnowledgeFile,
   resolveKnowledgePath,
 } from "../../lib/knowledge.js";
+import { requires } from "../../lib/identity.js";
+import { SCOPES } from "../../lib/scopes.js";
 
 const InputSchema = z.object({
   path: z
@@ -35,6 +37,7 @@ export default craft()
   .description("Read a single markdown file from the knowledge base.")
   .input({ body: InputSchema })
   .output({ body: ResultSchema })
+  .authorize(requires(SCOPES.KB_READ))
   .from(direct())
   .enrich(
     file({

@@ -10,6 +10,8 @@ import {
 import { z } from "zod";
 import { env } from "../../env.js";
 import type { ScanResult } from "./knowledge-scan.js";
+import { requires } from "../../lib/identity.js";
+import { SCOPES } from "../../lib/scopes.js";
 
 const InputSchema = z.object({
   query: z
@@ -61,6 +63,7 @@ export default craft()
   )
   .input({ body: InputSchema })
   .output({ body: ResultSchema })
+  .authorize(requires(SCOPES.KB_READ))
   .from(direct())
   .enrich(
     directory({ path: env.KNOWLEDGE_DIR, recursive: true }),

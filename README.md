@@ -41,6 +41,7 @@ Wait for everything to come up. Then visit:
 
 - **Planka kanban**: <http://localhost:1337> (login `demo@harness.local` / `demo`)
 - **Greenmail web UI**: <http://localhost:8025> (read what the agent sends)
+- **Dex (OIDC)**: <http://localhost:5556/dex/.well-known/openid-configuration>
 - **Knowledge base**: the `knowledge/` folder in your working copy
 - **MCP endpoint**: `http://localhost:3001/mcp` (point Claude Desktop or Cursor here)
 
@@ -160,8 +161,11 @@ craft-harness/
 |   |-- knowledge.ts           path safety, frontmatter, scoring (+ tests)
 |   |-- approvals.ts           approval card encode/decode (+ tests)
 |   `-- schemas/               shared Zod schemas
+|   |-- scopes.ts             the authorization vocabulary
+|   `-- identity.ts           who each channel acts as
+|-- dex/config.yaml            the demo OIDC provider, declared in full
 |-- knowledge/                 the knowledge base, seeded and bind-mounted
-|-- compose.yml                full stack (Greenmail + Planka + app)
+|-- compose.yml                full stack (Greenmail + Planka + Dex + app)
 |-- Dockerfile                 app container
 |-- craft.config.ts            Routecraft config: agent, mail, mcp
 `-- index.ts                   routes + capabilities exports
@@ -181,6 +185,71 @@ chained `.enrich()` steps, each adding what it learned to the body.
 
 Capabilities then compose: `report-gap` and `request-approval` do not know how
 a card reaches the board, they simply `.to(direct("create-ticket"))`.
+
+## Identity, and why the agent is not in the trust path
+
+Every capability declares what authority it needs:
+
+```ts
+craft().id("send-email").authorize(requires(SCOPES.MAIL_SEND)).from(direct());
+```
+
+`requires()` asserts two things: the subject holds the scope, and the action
+is performed either by that subject directly or by Aria on their behalf. No
+other agent can drive these routes even holding a principal that satisfies the
+scopes. The check is deterministic code reading a verified principal, and it
+runs before the route body does. The model is never asked whether it should be
+allowed to do something.
+
+Each of the four channels turns what it can actually verify into a principal,
+and they are deliberately not equal:
+
+| Channel                        | Acts as                                              | Can send mail      |
+| ------------------------------ | ---------------------------------------------------- | ------------------ |
+| MCP chat                       | the caller in the bearer token, Aria acting for them | if that person can |
+| Email                          | the mailbox, never the sender                        | no                 |
+| Ticket webhook (triage)        | the harness itself                                   | no                 |
+| Ticket webhook (approved card) | the board's approved list                            | yes                |
+| Cron                           | the harness itself                                   | no                 |
+
+The rule underneath is that identification is not authorization. A `From:`
+header names who wrote in; it says nothing about what they may ask an agent to
+do, and this demo's mail server will accept any address anyone types. So a
+mail-triggered run acts as the mailbox, and the mailbox cannot send. The only
+place `mail:send` is minted at all is the approval branch, and only after two
+independent facts hold: the webhook's HMAC verified, and the card was re-read
+and found in the approved list. A human put it there. Aria has no capability
+that can.
+
+Turn it on with one flag. `AUTH_DISABLED` defaults to true so the quick start
+works before you have met Dex; set it to `false` in `.env` and the MCP endpoint
+demands a real token:
+
+```bash
+TOKEN=$(curl -s http://localhost:5556/dex/token \
+  -d grant_type=password -d client_id=craft-harness \
+  -d username=demo@harness.local -d password=demo \
+  -d scope=openid+email | jq -r .id_token)
+
+curl http://localhost:3001/mcp -H "Authorization: Bearer $TOKEN" ...
+```
+
+Dex is a real OIDC provider, so Routecraft genuinely fetches a JWKS and
+verifies signatures; without a token you get a 401 and an RFC 9728
+`WWW-Authenticate` pointing at the issuer. Note what the flag does and does not
+do: it decides whether the MCP edge insists callers prove who they are. Scopes
+are enforced on capabilities either way, because every channel mints a
+principal.
+
+Ask `demo@harness.local` to email someone and you get a draft on the board.
+Ask `admin@harness.local` and it sends. Same prompt, same model, different
+answer, and the difference is not the model's to make.
+
+One honest limitation: role-to-scope assignment lives in `lib/scopes.ts`, which
+is the one thing here that would not live in the application in a real
+deployment. Revoking authority should be an IdP edit, not a deploy. It sits in
+code only because a zero-setup demo IdP cannot carry custom claims. The
+enforcement path is identical either way, which is the part worth learning.
 
 ## Memory that is a folder, not a service
 
@@ -265,8 +334,10 @@ Still open:
   client. A v1.1 release may add Lobe Chat as an optional fourth container.
 - Per-correlation memory or event introspection. The agent treats each
   invocation as fresh. Memory is a v1.x topic.
-- Real auth on the MCP server. Local-only demo; no OAuth. The production
-  template adds Clerk-backed OAuth via Routecraft's `oauth()`.
+- The OAuth authorization-code flow. The MCP server verifies real bearer
+  tokens against a real JWKS, but Dex is configured for the password grant so
+  the quick start needs no browser redirect. The production template swaps in
+  a hosted IdP and Routecraft's `oauth()` proxy mode.
 
 ## License
 

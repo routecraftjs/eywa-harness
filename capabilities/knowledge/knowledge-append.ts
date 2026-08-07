@@ -6,6 +6,8 @@ import {
   resolveKnowledgePath,
 } from "../../lib/knowledge.js";
 import { AGENT_PROVENANCE } from "../../lib/provenance.js";
+import { requires } from "../../lib/identity.js";
+import { SCOPES } from "../../lib/scopes.js";
 
 const InputSchema = z.object({
   path: z
@@ -40,6 +42,7 @@ export default craft()
   )
   .input({ body: InputSchema })
   .output({ body: ResultSchema })
+  .authorize(requires(SCOPES.KB_WRITE))
   .from(direct())
   .header(PATH_HEADER, (ex) => ex.body.path)
   .transform((body) =>
