@@ -14,6 +14,28 @@ export const craftConfig: CraftConfig = defineConfig({
     agents: await agents(join(here, "agents"), {
       aria: env.AGENT_MODEL ? { model: env.AGENT_MODEL } : {},
     }),
+    /**
+     * The agent may call capabilities in this repository and nothing else.
+     *
+     * `mcp: false` denies the agent every tool from an external MCP server.
+     * That is the whole security posture of the harness in one line: reaching
+     * an outside system has to go through a capability written here, where
+     * the inputs are typed, the call is deterministic, and the blast radius
+     * is visible in a diff. Handing the model a live MCP client instead would
+     * make the model's judgement the control plane.
+     *
+     * This does not affect `chat-with-aria`: that is an MCP server this
+     * harness exposes, an entry point INTO the agent, not a tool the agent
+     * calls out to.
+     *
+     * All three kinds are spelled out because the type demands it: an
+     * omitted key would silently deny that whole kind.
+     */
+    toolPolicy: {
+      fn: true,
+      direct: true,
+      mcp: false,
+    },
   },
   llm: {
     providers: {
