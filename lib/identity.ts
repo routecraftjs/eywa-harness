@@ -118,10 +118,14 @@ export const digest = (): PrincipalClaims => ({
 /**
  * The identity the approval executor acts as.
  *
- * This is the only place `mail:send` is minted, and it is minted after two
- * independent facts have been established: the webhook's HMAC verified, and
- * the card is sitting in the approved list. A human moved it there, and the
- * agent has no capability that can move a card into that list.
+ * The only place `mail:send` is minted anywhere the agent can reach, and it is
+ * minted after two independent facts have been established: the webhook's HMAC
+ * verified, and the card is sitting in the approved list. A human moved it
+ * there, and the agent has no capability that can move a card into that list.
+ *
+ * `digest()` above also carries `mail:send`, but nothing agentic runs on it:
+ * a deterministic route, a fixed recipient from configuration, no model in the
+ * path.
  */
 export const approvedByBoard = (cardId: string): PrincipalClaims => ({
   kind: "custom",
