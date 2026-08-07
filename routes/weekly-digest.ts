@@ -1,6 +1,6 @@
-import { craft, cron, direct, mail, only } from "@routecraft/routecraft";
+import { craft, cron, direct, only } from "@routecraft/routecraft";
 import { env } from "../env.js";
-import { scheduled } from "../lib/identity.js";
+import { digest } from "../lib/identity.js";
 import type { TicketSummary } from "../lib/planka.js";
 
 /**
@@ -19,7 +19,7 @@ export default craft()
   .id("weekly-digest")
   .from(cron("0 8 * * MON"))
   // eslint-disable-next-line @routecraft/routecraft/restrict-principal-minting -- an internal cron trigger, the only sanctioned source of standing authority. Nothing inbound can reach this line
-  .authenticate(() => scheduled("weekly-digest"))
+  .authenticate(() => digest())
   // cron delivers an empty body. This one doubles as the request body for the
   // enrichment below, which is why it carries a limit.
   .transform(() => ({ limit: 50 }))
@@ -58,7 +58,7 @@ export default craft()
     return {
       to: env.DIGEST_RECIPIENT,
       subject: `Board digest: ${tickets.length} open items`,
-      text: [
+      body: [
         "Weekly board digest",
         "",
         `Cards by list (${tickets.length} total):`,
@@ -73,4 +73,7 @@ export default craft()
       ].join("\n"),
     };
   })
-  .to(mail({ account: "default" }));
+  // Through the capability, not straight at the adapter. Every outbound mail
+  // in the harness passes the same scope check, so "mail:send is minted in one
+  // place" stays a fact about the code rather than a claim in a README.
+  .to(direct("send-email"));

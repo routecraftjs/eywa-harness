@@ -160,9 +160,9 @@ craft-harness/
 |   |-- planka.ts              pure request/response mapping, no IO
 |   |-- knowledge.ts           path safety, frontmatter, scoring (+ tests)
 |   |-- approvals.ts           approval card encode/decode (+ tests)
+|   |-- scopes.ts              the authorization vocabulary
+|   |-- identity.ts            who each channel acts as (+ tests)
 |   `-- schemas/               shared Zod schemas
-|   |-- scopes.ts             the authorization vocabulary
-|   `-- identity.ts           who each channel acts as
 |-- dex/config.yaml            the demo OIDC provider, declared in full
 |-- knowledge/                 the knowledge base, seeded and bind-mounted
 |-- compose.yml                full stack (Greenmail + Planka + Dex + app)
@@ -210,16 +210,25 @@ and they are deliberately not equal:
 | Email                          | the mailbox, never the sender                        | no                 |
 | Ticket webhook (triage)        | the harness itself                                   | no                 |
 | Ticket webhook (approved card) | the board's approved list                            | yes                |
-| Cron                           | the harness itself                                   | no                 |
+| Cron (heartbeat)               | the harness itself                                   | no                 |
+| Cron (weekly digest)           | the digest job                                       | to a fixed address |
 
 The rule underneath is that identification is not authorization. A `From:`
 header names who wrote in; it says nothing about what they may ask an agent to
 do, and this demo's mail server will accept any address anyone types. So a
 mail-triggered run acts as the mailbox, and the mailbox cannot send. The only
-place `mail:send` is minted at all is the approval branch, and only after two
-independent facts hold: the webhook's HMAC verified, and the card was re-read
-and found in the approved list. A human put it there. Aria has no capability
-that can.
+place `mail:send` reaches anything the agent touches is the approval branch,
+and only after two independent facts hold: the webhook's HMAC verified, and the
+card was re-read and found in the approved list. A human put it there. Aria has
+no capability that can.
+
+The weekly digest also sends, and it is the exception that proves the rule: no
+model sits in its path, the recipient comes from configuration, and it still
+goes through the `send-email` capability rather than reaching for the mail
+adapter directly. Every outbound mail in the harness passes the same check.
+
+`lib/identity.test.ts` asserts this whole table, refusals included. If the
+table and the code ever disagree, the test is the one that is right.
 
 Turn it on with one flag. `AUTH_DISABLED` defaults to true so the quick start
 works before you have met Dex; set it to `false` in `.env` and the MCP endpoint

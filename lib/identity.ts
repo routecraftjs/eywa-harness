@@ -93,6 +93,29 @@ export const scheduled = (job: string): PrincipalClaims => ({
 });
 
 /**
+ * The identity the weekly digest acts as.
+ *
+ * It carries `mail:send` where the heartbeat does not, because it genuinely
+ * sends: a deterministic summary, to a fixed address from configuration, with
+ * no model anywhere in the route. Minted on cron, so nothing inbound can
+ * trigger it.
+ *
+ * Separate from `scheduled()` rather than widening it. Two jobs run on the
+ * clock and only one of them mails anybody; giving both the stronger identity
+ * to save a function would hand the heartbeat, which wakes an agent, an
+ * authority it has no use for.
+ */
+export const digest = (): PrincipalClaims => ({
+  kind: "custom",
+  scheme: "internal",
+  subject: "job:weekly-digest",
+  subjectProfile: "service",
+  issuer: "craft-harness",
+  scopes: [SCOPES.TICKETS_READ, SCOPES.KB_READ, SCOPES.MAIL_SEND],
+  claims: { job: "weekly-digest" },
+});
+
+/**
  * The identity the approval executor acts as.
  *
  * This is the only place `mail:send` is minted, and it is minted after two
