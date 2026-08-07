@@ -1,7 +1,11 @@
-import { craft, direct } from "@routecraft/routecraft";
+import { craft, direct, file } from "@routecraft/routecraft";
 import { z } from "zod";
-import { appendToKnowledgeFile } from "../../lib/clients/s3.js";
-import { AGENT_NAME } from "../../lib/provenance.js";
+import { env } from "../../env.js";
+import {
+  renderAppendedSection,
+  resolveKnowledgePath,
+} from "../../lib/knowledge.js";
+import { AGENT_PROVENANCE } from "../../lib/provenance.js";
 
 const InputSchema = z.object({
   path: z
@@ -18,6 +22,17 @@ const InputSchema = z.object({
 
 const ResultSchema = z.object({ path: z.string(), ok: z.literal(true) });
 
+const PATH_HEADER = "knowledge.path";
+
+/**
+ * Append a section to a knowledge file.
+ *
+ * This is a real append, not a read-modify-write: the adapter opens the file
+ * in append mode and adds the bytes. Two facts learned in the same minute
+ * therefore both survive, where rewriting the whole file would silently drop
+ * one of them. The cost is that the file's frontmatter is not restamped, so
+ * each entry carries its own inline attribution instead.
+ */
 export default craft()
   .id("knowledge-append")
   .description(
@@ -26,7 +41,26 @@ export default craft()
   .input({ body: InputSchema })
   .output({ body: ResultSchema })
   .from(direct())
-  .transform(async (body) => {
-    await appendToKnowledgeFile(body.path, body.section, { author: AGENT_NAME });
-    return { path: body.path, ok: true as const };
-  });
+  .header(PATH_HEADER, (ex) => ex.body.path)
+  .transform((body) =>
+    renderAppendedSection(
+      body.section,
+      AGENT_PROVENANCE,
+      new Date().toISOString(),
+    ),
+  )
+  .to(
+    file({
+      path: (ex) =>
+        resolveKnowledgePath(
+          env.KNOWLEDGE_DIR,
+          String(ex.headers[PATH_HEADER]),
+        ),
+      append: true,
+      createDirs: true,
+    }),
+  )
+  .transform((_body, ex) => ({
+    path: String(ex.headers[PATH_HEADER]),
+    ok: true as const,
+  }));

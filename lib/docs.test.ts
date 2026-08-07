@@ -28,7 +28,9 @@ describe("docs index", () => {
     expect(entries[0]?.url).toBe(
       "https://routecraft.dev/raw/docs/introduction/installation.md",
     );
-    expect(entries[1]?.description).toBe("What Routecraft is and how it works.");
+    expect(entries[1]?.description).toBe(
+      "What Routecraft is and how it works.",
+    );
   });
 
   // The Links section holds a repo and a homepage, which are not pages the
@@ -69,7 +71,9 @@ describe("docs index", () => {
   });
 
   it("returns nothing when no page matches, rather than a bad guess", () => {
-    expect(rankDocs(parseDocsIndex(INDEX), "payroll tax deadlines")).toEqual([]);
+    expect(rankDocs(parseDocsIndex(INDEX), "payroll tax deadlines")).toEqual(
+      [],
+    );
     expect(rankDocs(parseDocsIndex(INDEX), "the a of")).toEqual([]);
   });
 });

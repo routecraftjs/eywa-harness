@@ -81,9 +81,7 @@ export default craft()
       "listIds",
     ),
   )
-  .transform(
-    (body): BoardContext => ({
-      boardId: body.boardId,
-      listIds: body.listIds,
-    }),
-  );
+  .transform((body): BoardContext => ({
+    boardId: body.boardId,
+    listIds: body.listIds,
+  }));

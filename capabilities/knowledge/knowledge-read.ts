@@ -1,12 +1,18 @@
-import { craft, direct } from "@routecraft/routecraft";
+import { craft, direct, file, only } from "@routecraft/routecraft";
 import { z } from "zod";
-import { readKnowledgeFile } from "../../lib/clients/s3.js";
+import { env } from "../../env.js";
+import {
+  parseKnowledgeFile,
+  resolveKnowledgePath,
+} from "../../lib/knowledge.js";
 
 const InputSchema = z.object({
   path: z
     .string()
     .min(1)
-    .describe("Path of the markdown file in the knowledge bucket, e.g. 'team.md'."),
+    .describe(
+      "Path of the markdown file in the knowledge base, e.g. 'team.md'.",
+    ),
 });
 
 const ResultSchema = z.object({
@@ -15,18 +21,29 @@ const ResultSchema = z.object({
   content: z.string(),
 });
 
+type Input = z.infer<typeof InputSchema>;
+
+/**
+ * Read one markdown file out of the knowledge base.
+ *
+ * The whole capability is a path check and a parse: `file()` does the read,
+ * and a missing file surfaces as the adapter's own "file not found" error,
+ * which is exactly what the agent should hear.
+ */
 export default craft()
   .id("knowledge-read")
   .description("Read a single markdown file from the knowledge base.")
   .input({ body: InputSchema })
   .output({ body: ResultSchema })
   .from(direct())
-  .transform(async (body) => {
-    const file = await readKnowledgeFile(body.path);
-    if (!file) {
-      throw new Error(
-        `Knowledge file not found: ${body.path}. Use knowledge-find to list available paths.`,
-      );
-    }
-    return file;
-  });
+  .enrich(
+    file({
+      path: (ex) =>
+        resolveKnowledgePath(env.KNOWLEDGE_DIR, (ex.body as Input).path),
+    }),
+    only((raw: string) => raw, "raw"),
+  )
+  .transform((body) => ({
+    path: body.path,
+    ...parseKnowledgeFile(body.raw),
+  }));

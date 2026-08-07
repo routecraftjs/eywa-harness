@@ -14,9 +14,9 @@ const action: ApprovalAction = {
 
 describe("approval cards", () => {
   it("survives a render and parse round trip", () => {
-    expect(parseApprovalAction(renderApprovalCard(action, "supplier reply"))).toEqual(
-      action,
-    );
+    expect(
+      parseApprovalAction(renderApprovalCard(action, "supplier reply")),
+    ).toEqual(action);
   });
 
   it("shows the human what they are approving", () => {
@@ -29,7 +29,11 @@ describe("approval cards", () => {
 
   // A summary printed alongside the payload would let a human edit prose that
   // is not what gets sent. Each field must appear exactly once on the card.
-  it.each([["recipient", action.to], ["subject", action.subject], ["body", action.body]])(
+  it.each([
+    ["recipient", action.to],
+    ["subject", action.subject],
+    ["body", action.body],
+  ])(
     "renders the %s exactly once, so editing it cannot diverge from what is sent",
     (_label, value) => {
       const card = renderApprovalCard(action, "supplier reply");
@@ -72,6 +76,8 @@ describe("approval cards", () => {
       "will confirm once legal signs off",
     );
     expect(parseApprovalAction(edited)?.body).toContain("legal signs off");
-    expect(parseApprovalAction(edited)?.body).not.toContain("will order this week");
+    expect(parseApprovalAction(edited)?.body).not.toContain(
+      "will order this week",
+    );
   });
 });

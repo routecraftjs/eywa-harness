@@ -19,10 +19,11 @@ This is a flagship example for Routecraft. It demonstrates:
 
 - A typed Routecraft pipeline with three input channels (email, kanban
   webhook, MCP) feeding a single AI agent.
-- Read+write knowledge memory over an S3-compatible bucket of markdown
-  files. Drop your own context in, the agent uses it.
-- Mock backends only. Greenmail mocks Gmail, Planka mocks Monday, MinIO
-  mocks S3. Swap them for real services and the same code runs.
+- Read+write knowledge memory over a directory of markdown files. Drop your
+  own context in, the agent uses it, and what she learns lands back in your
+  working copy as a diff you can read.
+- Mock backends only. Greenmail mocks Gmail, Planka mocks Monday. Swap them
+  for real services and the same code runs.
 
 ## Quick start
 
@@ -40,7 +41,7 @@ Wait for everything to come up. Then visit:
 
 - **Planka kanban**: <http://localhost:1337> (login `demo@harness.local` / `demo`)
 - **Greenmail web UI**: <http://localhost:8025> (read what the agent sends)
-- **MinIO console**: <http://localhost:9001> (login `minioadmin` / `minioadmin`)
+- **Knowledge base**: the `knowledge/` folder in your working copy
 - **MCP endpoint**: `http://localhost:3001/mcp` (point Claude Desktop or Cursor here)
 
 ## The scenarios
@@ -66,20 +67,20 @@ is rejected with 401 and never reaches the agent.
 ### 3. Knowledge query (chat via MCP)
 
 Connect Claude Desktop or Cursor to `http://localhost:3001/mcp`. Use the
-`chat-with-aria` tool and ask: *"When is the next public holiday?"* Aria
+`chat-with-aria` tool and ask: _"When is the next public holiday?"_ Aria
 calls `knowledge-find` against the seeded `holidays.md` and answers from it.
 
 ### 4. Knowledge writeback
 
-Tell Aria: *"Anna joined the team this week as a frontend engineer."* She
+Tell Aria: _"Anna joined the team this week as a frontend engineer."_ She
 calls `knowledge-append` to add the entry to `team.md`. Next session, ask
-*"Who joined recently?"* and she'll answer from her own note. The entry is
+_"Who joined recently?"_ and she'll answer from her own note. The entry is
 stamped with who wrote it and when, so memory carries its own provenance.
 
 ### 5. Human in the loop, by moving a card
 
-Ask Aria to email someone outside the current thread: *"Email
-procurement@acme-supplies.test and accept their quote."* She will not send
+Ask Aria to email someone outside the current thread: _"Email
+procurement@acme-supplies.test and accept their quote."_ She will not send
 it. She calls `request-approval`, which parks the draft on the board as a
 card. Open it, read (or edit) the action block, and drag the card to the
 **Approved** list. The webhook fires, a deterministic route sends exactly
@@ -91,15 +92,15 @@ point of doing it this way rather than asking the model to be careful.
 
 ### 6. The backlog that writes itself
 
-Ask for something no tool covers: *"How many vacation days do I have
-left?"* Aria says plainly that she cannot, then files a `report-gap` card
+Ask for something no tool covers: _"How many vacation days do I have
+left?"_ Aria says plainly that she cannot, then files a `report-gap` card
 carrying the original request, what she tried, and what would have solved
 it. A real request that hit a real wall is a better backlog item than any
 speculative roadmap entry, and the card is the spec.
 
 ### 7. Ask it about Routecraft itself
 
-Before you configure a single backend, ask the agent *"What is Routecraft?"*
+Before you configure a single backend, ask the agent _"What is Routecraft?"_
 and it answers from the live documentation.
 
 The harness ships **no copy of the docs**. `ask-docs` reads the `llms.txt`
@@ -130,12 +131,15 @@ which the agent writes to and so must never be cached.
        get-ticket               (Greenmail)             knowledge-read
        update-ticket-status                             knowledge-write
        comment-on-ticket                                knowledge-append
-            (Planka)                                       (MinIO)
+            (Planka)                                  (markdown on disk)
 ```
 
 Each input channel is a thin Routecraft route that hands the message to
-Aria. Aria has nine tools (the capabilities). She reasons over the input,
-calls tools, and replies through whichever channel makes sense.
+Aria. She reasons over the input, calls tools, and replies through whichever
+channel makes sense. Every tool she has is a route in this repository, and
+`toolPolicy` in `craft.config.ts` denies her everything else: she cannot
+reach an outside system except through a capability written here, where the
+input is typed and the blast radius shows up in a diff.
 
 ## Project layout
 
@@ -146,17 +150,18 @@ craft-harness/
 |   |-- tickets/               kanban operations + report-gap
 |   |-- email/                 send-email
 |   |-- approvals/             request-approval (human-in-the-loop)
-|   |-- knowledge/             markdown-on-S3 read+write
+|   |-- knowledge/             markdown read+write over file()/directory()
+|   |-- docs/                  live Routecraft docs over http()
 |   |-- planka/                internal: cached token + board resolution
 |   `-- mcp/chat-with-aria.ts  MCP entrypoint
 |-- routes/                    inbox, ticket webhook, digest, heartbeat
 |-- lib/
-|   |-- clients/s3.ts          S3 (MinIO) client
 |   |-- planka.ts              pure request/response mapping, no IO
+|   |-- knowledge.ts           path safety, frontmatter, scoring (+ tests)
 |   |-- approvals.ts           approval card encode/decode (+ tests)
 |   `-- schemas/               shared Zod schemas
-|-- knowledge/                 seed markdown files
-|-- compose.yml                full stack (Greenmail + Planka + MinIO + app)
+|-- knowledge/                 the knowledge base, seeded and bind-mounted
+|-- compose.yml                full stack (Greenmail + Planka + app)
 |-- Dockerfile                 app container
 |-- craft.config.ts            Routecraft config: agent, mail, mcp
 `-- index.ts                   routes + capabilities exports
@@ -176,6 +181,29 @@ chained `.enrich()` steps, each adding what it learned to the body.
 
 Capabilities then compose: `report-gap` and `request-approval` do not know how
 a card reaches the board, they simply `.to(direct("create-ticket"))`.
+
+## Memory that is a folder, not a service
+
+The knowledge base is a directory of markdown files, and no code in this
+repository opens one. `directory()` lists the folder, `.split()` fans out one
+exchange per file, `file()` reads each one, `.aggregate()` brings the results
+back. What is left in `lib/knowledge.ts` is the part that is genuinely ours:
+where a path may point, how frontmatter is rendered, and how a query scores.
+All of it unit-tested without touching a disk.
+
+Two decisions in there are worth the sentence:
+
+- **Paths are resolved, then checked for containment.** The agent chooses the
+  path, and the store is a real filesystem, so `../../etc/passwd` has to be
+  rejected here or not at all. Inspecting the string misses encodings and
+  absolute paths; `path.resolve` normalises all of it before the comparison.
+- **Appends are real appends.** `file({ append: true })` adds the bytes rather
+  than rewriting the file, so two facts learned in the same minute both
+  survive. The cost is that the frontmatter is not restamped, which is why
+  each entry carries its own inline attribution.
+
+Because it is a bind mount, what the agent writes appears in your working copy
+as a diff, and what you drop in she reads on her next call.
 
 ## Both execution modes, on purpose
 
@@ -200,25 +228,31 @@ populates everything except `ANTHROPIC_API_KEY`, which you provide in
 
 To run against real backends instead of mocks, swap the env vars:
 
-| Variable | Mock value | Real value |
-|---|---|---|
-| `MAIL_HOST` | `greenmail` | `imap.gmail.com` |
-| `MAIL_USER` / `MAIL_PASSWORD` | demo creds | Gmail user + app password |
-| `MAIL_TLS` | `false` | `true` |
-| `PLANKA_BASE_URL` | `http://planka:1337` | swap for a Monday adapter (planned) |
-| `S3_ENDPOINT` | `http://minio:9000` | unset (uses AWS S3) |
-| `S3_ACCESS_KEY` / `S3_SECRET_KEY` | minio creds | your AWS creds |
+| Variable                      | Mock value           | Real value                               |
+| ----------------------------- | -------------------- | ---------------------------------------- |
+| `MAIL_HOST`                   | `greenmail`          | `imap.gmail.com`                         |
+| `MAIL_USER` / `MAIL_PASSWORD` | demo creds           | Gmail user + app password                |
+| `MAIL_TLS`                    | `false`              | `true`                                   |
+| `PLANKA_BASE_URL`             | `http://planka:1337` | swap for a Monday adapter (planned)      |
+| `KNOWLEDGE_DIR`               | `/app/knowledge`     | any directory, including a synced folder |
 
 ## Routecraft framework gaps surfaced by this harness
 
-Building this revealed a few things Routecraft itself should ship out of
-the box. Each one is implemented locally in this repo for now and will be
-contributed back upstream:
+Building this is how the framework's gaps get found, and two are already
+closed: the `directory()` adapter and its enricher role exist because this
+harness needed to list a folder mid-route, and webhook signature verification
+moved into `http()` after the first version of the ticket route hand-rolled
+it.
 
-- **`@routecraft/s3` adapter**. The `lib/clients/s3.ts` here is a candidate
-  for promotion. Same code works against MinIO, AWS S3, R2, B2.
-- **`@routecraft/postgres-events` event-store adapter**. Not in this v0;
-  added in a v1.x release that demonstrates event-sourced agents.
+Still open:
+
+- **`.split()` inside a `.choice()` branch.** `knowledge-find` needs a branch
+  for the empty knowledge base and a fan-out for the non-empty one, and the
+  branch builder has no `.split()`. Today that costs a route boundary
+  (`knowledge-scan`), which is defensible composition but should not be
+  compulsory.
+- **`@routecraft/s3` adapter**, for deployments where knowledge belongs in a
+  bucket rather than on a disk.
 - **Markdown-with-frontmatter helper**. We use `gray-matter` directly today;
   Routecraft already parses frontmatter for personas internally and could
   expose that as a public util.
@@ -243,4 +277,3 @@ Apache-2.0. See [LICENSE](LICENSE).
 - [Routecraft](https://routecraft.dev) - the framework powering this demo.
 - [Greenmail](https://greenmail-mail-test.github.io/greenmail/) - local mail server.
 - [Planka](https://planka.app/) - open-source Trello clone.
-- [MinIO](https://min.io/) - S3-compatible object store.

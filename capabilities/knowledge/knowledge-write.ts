@@ -1,13 +1,19 @@
-import { craft, direct } from "@routecraft/routecraft";
+import { craft, direct, file } from "@routecraft/routecraft";
 import { z } from "zod";
-import { writeKnowledgeFile } from "../../lib/clients/s3.js";
-import { AGENT_NAME } from "../../lib/provenance.js";
+import { env } from "../../env.js";
+import {
+  renderKnowledgeFile,
+  resolveKnowledgePath,
+} from "../../lib/knowledge.js";
+import { AGENT_PROVENANCE } from "../../lib/provenance.js";
 
 const InputSchema = z.object({
   path: z
     .string()
     .min(1)
-    .describe("Path of the markdown file, e.g. 'team.md'. Overwrites if it exists."),
+    .describe(
+      "Path of the markdown file, e.g. 'team.md'. Overwrites if it exists.",
+    ),
   frontmatter: z
     .record(z.string(), z.unknown())
     .default({})
@@ -22,6 +28,19 @@ const InputSchema = z.object({
 
 const ResultSchema = z.object({ path: z.string(), ok: z.literal(true) });
 
+/** Header carrying the requested path across the body's transformation. */
+const PATH_HEADER = "knowledge.path";
+
+/**
+ * Create or overwrite a markdown file.
+ *
+ * `file()` writes whatever the body is, so the body has to become the
+ * rendered markdown before the write and cannot also carry the path. That is
+ * what headers are for: metadata that outlives a body transformation. The
+ * alternative, `.tap()`, would keep the body but is fire-and-forget, and a
+ * write capability that cannot report failure is worse than useless to an
+ * agent deciding what to tell the person who asked.
+ */
 export default craft()
   .id("knowledge-write")
   .description(
@@ -30,9 +49,26 @@ export default craft()
   .input({ body: InputSchema })
   .output({ body: ResultSchema })
   .from(direct())
-  .transform(async (body) => {
-    await writeKnowledgeFile(body.path, body.frontmatter, body.body, {
-      author: AGENT_NAME,
-    });
-    return { path: body.path, ok: true as const };
-  });
+  .header(PATH_HEADER, (ex) => ex.body.path)
+  .transform((body) =>
+    renderKnowledgeFile(
+      body.frontmatter,
+      body.body,
+      AGENT_PROVENANCE,
+      new Date().toISOString(),
+    ),
+  )
+  .to(
+    file({
+      path: (ex) =>
+        resolveKnowledgePath(
+          env.KNOWLEDGE_DIR,
+          String(ex.headers[PATH_HEADER]),
+        ),
+      createDirs: true,
+    }),
+  )
+  .transform((_body, ex) => ({
+    path: String(ex.headers[PATH_HEADER]),
+    ok: true as const,
+  }));

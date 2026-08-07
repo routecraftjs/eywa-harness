@@ -40,7 +40,7 @@ const ResultSchema = z.object({
 });
 
 type Input = z.infer<typeof InputSchema>;
-type WithIndex = Input & { summary: string; entries: DocEntry[] };
+type WithIndex = Input & { docs: DocsIndex };
 type WithMatches = WithIndex & { matches: DocEntry[] };
 
 /**
@@ -63,25 +63,29 @@ export default craft()
   .input({ body: InputSchema })
   .output({ body: ResultSchema })
   .from(direct())
-  .enrich(direct<unknown, DocsIndex>("docs-index"))
-  .transform(
-    (body: WithIndex): WithMatches => ({
-      ...body,
-      matches: rankDocs(body.entries, body.question),
-    }),
+  .enrich(
+    direct<unknown, DocsIndex>("docs-index"),
+    only((index: DocsIndex) => index, "docs"),
   )
+  .transform((body: WithIndex): WithMatches => ({
+    ...body,
+    matches: rankDocs(body.docs.entries, body.question),
+  }))
   .enrich(
     // Fetch only the best match. The model reads one page well; handing it
     // five is mostly context it pays for and does not use, and a follow-up
     // question can always ask for another from `alsoAvailable`.
     http<WithMatches, string>({
-      url: (ex) => ex.body.matches[0]?.url ?? "",
+      url: (ex: { body: WithMatches }) => ex.body.matches[0]?.url ?? "",
       throwOnHttpError: false,
     }),
-    only((r: HttpResult<string>) => (r.status === 200 ? String(r.body) : ""), "page"),
+    only(
+      (r: HttpResult<string>) => (r.status === 200 ? String(r.body) : ""),
+      "page",
+    ),
   )
   .transform((body) => ({
-    summary: body.summary,
+    summary: body.docs.summary,
     answeredFrom: body.matches[0]
       ? { title: body.matches[0].title, url: body.matches[0].url }
       : null,

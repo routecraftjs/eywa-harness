@@ -4,7 +4,10 @@ import { z } from "zod";
 const InputSchema = z.object({
   to: z.string().email().describe("Recipient email address."),
   subject: z.string().min(1).describe("Email subject line."),
-  body: z.string().min(1).describe("Plain-text body. The agent's reply or note."),
+  body: z
+    .string()
+    .min(1)
+    .describe("Plain-text body. The agent's reply or note."),
   inReplyTo: z
     .string()
     .optional()

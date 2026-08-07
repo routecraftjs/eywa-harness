@@ -5,7 +5,9 @@ const InputSchema = z.object({
   need: z
     .string()
     .min(1)
-    .describe("The capability you were missing, in one line. e.g. 'read the leave calendar'."),
+    .describe(
+      "The capability you were missing, in one line. e.g. 'read the leave calendar'.",
+    ),
   request: z
     .string()
     .min(1)
@@ -46,7 +48,9 @@ export default craft()
       `**Original request:** ${body.request}`,
       "",
       `**Why I could not answer:** ${body.blocked}`,
-      ...(body.suggestion ? ["", `**Suggested approach:** ${body.suggestion}`] : []),
+      ...(body.suggestion
+        ? ["", `**Suggested approach:** ${body.suggestion}`]
+        : []),
       "",
       "---",
       "Filed automatically by Aria on hitting this gap during a real request.",

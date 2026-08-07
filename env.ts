@@ -33,20 +33,15 @@ const EnvSchema = z.object({
   // Where the deterministic weekly digest is sent.
   DIGEST_RECIPIENT: z.string().default("demo@harness.local"),
 
-  // S3 (MinIO by default)
-  S3_ENDPOINT: z.string().default("http://minio:9000"),
-  S3_REGION: z.string().default("us-east-1"),
-  S3_ACCESS_KEY: z.string().default("minioadmin"),
-  S3_SECRET_KEY: z.string().default("minioadmin"),
-  S3_KNOWLEDGE_BUCKET: z.string().default("knowledge"),
-  S3_FORCE_PATH_STYLE: z.coerce.boolean().default(true),
+  // Knowledge base: a directory of markdown files, read and written through
+  // the file() and directory() adapters. Mount it as a volume to keep what
+  // the agent writes, or point it at a synced folder to edit alongside her.
+  KNOWLEDGE_DIR: z.string().default("./knowledge"),
 
   // Public documentation sources. Both sites publish an `llms.txt` index
   // whose entries link to raw markdown, so the harness needs no bundled
   // copy of the docs and never serves a stale answer.
-  DOCS_ROUTECRAFT_INDEX: z
-    .string()
-    .default("https://routecraft.dev/llms.txt"),
+  DOCS_ROUTECRAFT_INDEX: z.string().default("https://routecraft.dev/llms.txt"),
   DOCS_DEVOPTIX_INDEX: z.string().default("https://devoptix.nl/llms.txt"),
   DOCS_CACHE_TTL_MS: z.coerce.number().default(60 * 60 * 1000),
 

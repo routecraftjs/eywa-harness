@@ -62,10 +62,7 @@ export const parseDocsIndex = (index: string): DocEntry[] => {
  * whole-word search gets wrong most often.
  */
 const stem = (word: string): string => {
-  const base = word
-    .replace(/ies$/, "i")
-    .replace(/s$/, "")
-    .replace(/y$/, "i");
+  const base = word.replace(/ies$/, "i").replace(/s$/, "").replace(/y$/, "i");
   // Past tense too ("changed" -> "chang", which prefixes "change"), but only
   // when enough word survives to stay meaningful: stripping "ed" from "need"
   // or "speed" would match far too much.
@@ -86,14 +83,40 @@ const mentions = (haystack: string, term: string): boolean => {
  * question while answering almost none. Demote it unless the question is
  * actually about releases.
  */
-const isChangelog = (title: string): boolean => /changelog|release note/.test(title);
+const isChangelog = (title: string): boolean =>
+  /changelog|release note/.test(title);
 const asksAboutReleases = (wanted: readonly string[]): boolean =>
   wanted.some((t) => /change|release|version|new/.test(t));
 
 const STOP_WORDS = new Set([
-  "a", "an", "and", "are", "can", "do", "does", "for", "how", "i", "in", "is",
-  "it", "me", "of", "on", "or", "the", "to", "what", "when", "where", "which",
-  "who", "why", "with", "you", "your",
+  "a",
+  "an",
+  "and",
+  "are",
+  "can",
+  "do",
+  "does",
+  "for",
+  "how",
+  "i",
+  "in",
+  "is",
+  "it",
+  "me",
+  "of",
+  "on",
+  "or",
+  "the",
+  "to",
+  "what",
+  "when",
+  "where",
+  "which",
+  "who",
+  "why",
+  "with",
+  "you",
+  "your",
 ]);
 
 /** Content words of a question, lowercased and de-noised. */

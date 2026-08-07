@@ -22,6 +22,7 @@ import askDocs from "./docs/ask-docs.js";
 
 // Knowledge
 import knowledgeFind from "./knowledge/knowledge-find.js";
+import knowledgeScan from "./knowledge/knowledge-scan.js";
 import knowledgeRead from "./knowledge/knowledge-read.js";
 import knowledgeWrite from "./knowledge/knowledge-write.js";
 import knowledgeAppend from "./knowledge/knowledge-append.js";
@@ -48,6 +49,7 @@ export default [
   plankaToken,
   plankaBoard,
   docsIndex,
+  knowledgeScan,
   // External entry point
   chatWithAria,
 ];
