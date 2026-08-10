@@ -1,8 +1,12 @@
 # Build stage
 FROM oven/bun:1.3.9 AS deps
 WORKDIR /app
-COPY package.json bun.lockb* ./
-RUN bun install --frozen-lockfile || bun install
+# bun.lock, not bun.lockb: bun 1.2 replaced the binary lockfile with a text
+# one. Globbing for the old name copied nothing, --frozen-lockfile failed for
+# want of a lockfile, and the fallback silently re-resolved every range at
+# build time. The image could then run versions the lockfile never pinned.
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile
 
 # Runtime
 FROM oven/bun:1.3.9
