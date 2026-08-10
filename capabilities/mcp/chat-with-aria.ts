@@ -1,6 +1,12 @@
 import { agent, mcp } from "@routecraft/ai";
 import { craft } from "@routecraft/routecraft";
 import { z } from "zod";
+import {
+  ANONYMOUS_FALLBACK,
+  ARIA,
+  authEnforced,
+  ceilingFor,
+} from "../../lib/identity.js";
 
 const InputSchema = z.object({
   text: z
@@ -17,6 +23,14 @@ const InputSchema = z.object({
  * Connect Claude Desktop, Cursor, or any MCP client to the harness on
  * `http://localhost:3001/mcp` and invoke this tool to talk to Aria. The
  * input flows through the same agent that handles email and ticket events.
+ *
+ * This is the one channel that carries a real person's authority. The MCP
+ * server verifies the bearer token against Dex's JWKS before the route runs,
+ * so by the time `.delegate()` executes the caller is known, and Aria acts
+ * as their delegate rather than as herself. What she can then do differs per
+ * caller: `demo@harness.local` has no `mail:send`, so asking her to send an
+ * email gets a draft on the board, while `admin@harness.local` gets a send.
+ * Neither outcome is the model's choice.
  */
 export default craft()
   .id("chat-with-aria")
@@ -24,9 +38,17 @@ export default craft()
     "Chat with Aria, the demo Craft Harness assistant. She can read the knowledge base, file tickets, and update the board.",
   )
   .input({ body: InputSchema })
-  .from<z.infer<typeof InputSchema>>(
-    mcp({ annotations: { readOnlyHint: false, destructiveHint: false } }),
+  .from(mcp({ annotations: { readOnlyHint: false, destructiveHint: false } }))
+  // Without a verified token there is nobody to act for, so the fallback is
+  // an identity the harness owns and has kept weak, not the caller's word.
+  // eslint-disable-next-line @routecraft/routecraft/restrict-principal-minting -- the sanctioned MCP channel boundary. Mints only the weak demo identity, and only when AUTH_DISABLED has switched enforcement off
+  .authenticate((ex) =>
+    authEnforced && ex.principal ? undefined : ANONYMOUS_FALLBACK,
   )
+  .delegate((ex) => ({
+    actor: ARIA,
+    scopes: ceilingFor(ex.principal?.claims ?? { email: ex.principal?.email }),
+  }))
   .transform((body) => ({
     channel: "mcp" as const,
     text: body.text,

@@ -3,12 +3,26 @@ import createTicket from "./tickets/create-ticket.js";
 import getTicket from "./tickets/get-ticket.js";
 import updateTicketStatus from "./tickets/update-ticket-status.js";
 import commentOnTicket from "./tickets/comment-on-ticket.js";
+import reportGap from "./tickets/report-gap.js";
+import listTickets from "./tickets/list-tickets.js";
 
 // Email
 import sendEmail from "./email/send-email.js";
 
+// Approvals
+import requestApproval from "./approvals/request-approval.js";
+
+// Planka plumbing (internal: not exposed to any persona)
+import plankaToken from "./planka/planka-token.js";
+import plankaBoard from "./planka/planka-board.js";
+
+// Docs (live, fetched from published llms.txt indexes)
+import docsIndex from "./docs/docs-index.js";
+import askDocs from "./docs/ask-docs.js";
+
 // Knowledge
 import knowledgeFind from "./knowledge/knowledge-find.js";
+import knowledgeScan from "./knowledge/knowledge-scan.js";
 import knowledgeRead from "./knowledge/knowledge-read.js";
 import knowledgeWrite from "./knowledge/knowledge-write.js";
 import knowledgeAppend from "./knowledge/knowledge-append.js";
@@ -22,11 +36,20 @@ export default [
   getTicket,
   updateTicketStatus,
   commentOnTicket,
+  listTickets,
+  reportGap,
   sendEmail,
+  requestApproval,
   knowledgeFind,
   knowledgeRead,
   knowledgeWrite,
   knowledgeAppend,
+  askDocs,
+  // Internal plumbing, reached only by other routes via direct()
+  plankaToken,
+  plankaBoard,
+  docsIndex,
+  knowledgeScan,
   // External entry point
   chatWithAria,
 ];
