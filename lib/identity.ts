@@ -177,8 +177,8 @@ export const boardEvent = (cardId: string): PrincipalClaims => ({
  * The identity the approval executor acts as.
  *
  * The only place `mail:send` is minted anywhere the agent can reach, and it is
- * minted after two independent facts have been established: the webhook's HMAC
- * verified, and the card is sitting in the approved list. A human moved it
+ * minted after two independent facts have been established: the webhook
+ * authenticated, and the card is sitting in the approved list. A human moved it
  * there, and the agent has no capability that can move a card into that list.
  *
  * `digest()` above also carries `mail:send`, but nothing agentic runs on it:
