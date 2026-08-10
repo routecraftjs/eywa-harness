@@ -8,10 +8,12 @@
 
 # Craft Harness
 
-A working AI agent in 30 seconds. Built on [Routecraft](https://routecraft.dev).
+A working AI agent in about a minute. Built on
+[Routecraft](https://routecraft.dev).
 
-`docker compose up`, then send the agent an email, create a Kanban card, or
-talk to her over MCP. No real Gmail, Monday, or GitHub credentials required.
+`docker compose up -d` for the backing services, `bun run dev` for the agent.
+Then send her an email, create a kanban card, or talk to her over MCP. No real
+Gmail, Monday, or GitHub credentials required.
 
 ## Why this exists
 
@@ -27,33 +29,147 @@ This is a flagship example for Routecraft. It demonstrates:
 
 ## Quick start
 
-You need Docker and an Anthropic API key.
+You need Docker, [Bun](https://bun.sh), and an Anthropic API key.
+
+Compose runs the backing services. The harness itself runs on your machine,
+because it is the part you are here to read and change.
 
 ```bash
 git clone https://github.com/routecraftjs/craft-harness.git
 cd craft-harness
+
 cp .env.example .env
 # Edit .env and set ANTHROPIC_API_KEY=sk-ant-...
-docker compose up
+
+docker compose up -d     # mail, board, identity, webmail, board seed
+bun install
+bun run dev              # the agent
 ```
 
-Wait for everything to come up. Then visit:
+`docker compose up -d` finishes in a few seconds and seeds the board on the
+way. `bun run dev` is ready once it logs `Starting Routecraft context`. Leave
+it running; restart it whenever you change code.
 
-- **Planka kanban**: <http://localhost:1337> (login `demo@harness.local` / `demo`)
-- **Greenmail web UI**: <http://localhost:8025> (read what the agent sends)
-- **Dex (OIDC)**: <http://localhost:5556/dex/.well-known/openid-configuration>
-- **Knowledge base**: the `knowledge/` folder in your working copy
-- **MCP endpoint**: `http://localhost:3001/mcp` (point Claude Desktop or Cursor here)
+Then open:
 
-## The scenarios
+| What               | Where                                                        | Notes                                                      |
+| ------------------ | ------------------------------------------------------------ | ---------------------------------------------------------- |
+| **Webmail**        | <http://localhost:8000>                                      | log in as `jaco@harness.local`, **any password**           |
+| **Kanban board**   | <http://localhost:1337>                                      | `demo@harness.local` / `demo`                              |
+| **MCP endpoint**   | `http://localhost:3001/mcp`                                  | point Claude Desktop or Cursor here                        |
+| **Knowledge base** | the `knowledge/` folder                                      | plain markdown in your working copy                        |
+| **Dex (OIDC)**     | <http://localhost:5556/dex/.well-known/openid-configuration> | only needed if you turn auth on                            |
+| **Greenmail API**  | <http://localhost:8080>                                      | an OpenAPI browser, not a mail client; handy for scripting |
+
+The webmail is Roundcube pointed at Greenmail's IMAP and SMTP. Greenmail ships
+no mail client of its own and runs with authentication disabled, so any
+password logs you in as any of the seeded users (`jaco@`, `demo@`, `aria@`).
+
+<details>
+<summary>Running the harness in Docker too</summary>
+
+```bash
+echo 'APP_WEBHOOK_URL=http://app:3000/webhooks/planka' >> .env
+docker compose --profile app up -d --build
+```
+
+The `APP_WEBHOOK_URL` line matters: without it Planka keeps posting webhooks
+to your host, where nothing is listening any more, and scenarios 2 and 5 go
+quiet with no error anywhere.
+
+Prefer the host for development. A rebuilt container gets a new IP, Planka
+holds its HTTP connections open, and deliveries then go to the old address
+until Planka is restarted. It logs nothing when that happens.
+
+</details>
+
+## Walk through it in five minutes
+
+Do these in order. Each one takes a few seconds of agent thinking time.
+
+**1. Mail her something ordinary.** At <http://localhost:8000>, logged in as
+`jaco@harness.local`, write to `aria@harness.local`:
+
+> Subject: The office wifi keeps dropping
+> The wifi in the Amsterdam office has dropped three times today. Can you log
+> this so someone picks it up?
+
+Within about ten seconds a card appears in **Backlog** on
+<http://localhost:1337>, written up in her words with the reporter recorded.
+
+**2. Give the board something to think about.** On the board, add a card to
+**Backlog** with a title and a description that asks something real:
+
+> Laptop for new starter Anna
+> Anna starts on Monday and has no laptop yet. Who arranges this and by when?
+
+Planka posts a webhook, Aria reads the card, and a comment appears on it. When
+the knowledge base cannot answer, she says so and asks specific questions
+rather than inventing a process.
+
+**3. Ask her something she does know.** Point an MCP client at
+`http://localhost:3001/mcp` and use the `chat-with-aria` tool:
+
+> When is the next public holiday?
+
+She answers from `knowledge/holidays.md` via `knowledge-find`.
+
+**4. Teach her something.** In the same chat:
+
+> Anna joined the team this week as a frontend engineer.
+
+She appends it to `knowledge/team.md`. Open the file: the entry is stamped
+with who wrote it and when. Ask "who joined recently?" in a fresh session and
+she answers from her own note.
+
+**5. Make her ask permission.** Mail her something that reaches outside the
+company:
+
+> Subject: Accept the quote from Acme Supplies
+> Please email procurement@acme-supplies.test and tell them we accept their
+> quote for the new office chairs.
+
+She will not send it. A card named **Approve email: ...** appears in
+**Backlog** containing the exact text she wants to send. Read it, edit it if
+you like, then **drag the card to the Approved list**.
+
+That drag is the send. The card gets a comment reading _"Approved and sent.
+Recorded by the harness, not by Aria."_, and the mail is really delivered:
+
+```bash
+curl -s http://localhost:8080/api/user/procurement@acme-supplies.test/messages/INBOX | jq -r '.[].subject'
+```
+
+**6. Ask for something impossible.**
+
+> How many vacation days do I have left?
+
+She says plainly that she cannot, and files a card describing the request, what
+she tried, and what would have solved it.
+
+### If nothing happens
+
+- `bun run dev` must be running, and past `Starting Routecraft context`.
+- Run it with `LOG_LEVEL=debug bun run dev` to see each step. At `info` a
+  successful run is almost silent, so silence is not a failure signal.
+- Comments live at `/api/cards/<id>/actions`, not on the card object, if you
+  are checking the board over the API rather than in the browser.
+
+## What each scenario is actually demonstrating
+
+The walkthrough above is the how. This is the why, in the same order.
 
 ### 1. Email triage
 
-Send an email to `aria@harness.local` from any of the seeded users
-(`demo@harness.local`, `jaco@harness.local`). The Greenmail web UI at
-<http://localhost:8025> lets you compose mail directly. Aria reads it and
-decides what to do: file a ticket, write to the knowledge base, or send a
-reply.
+Mail arriving for `aria@harness.local` wakes a route that hands the message to
+her. She decides what to do with it: file a ticket, write to the knowledge
+base, or draft a reply.
+
+She cannot mail you back directly, and that is deliberate. A mail-triggered
+run acts as the mailbox, and the mailbox identity in `lib/identity.ts` has no
+`mail:send` scope, because a `From:` header identifies a sender without saying
+what an agent may do for them. Her only route outward is `request-approval`,
+which parks the draft on the board for scenario 5.
 
 ### 2. Ticket triage
 
@@ -61,9 +177,16 @@ Open the Planka board at <http://localhost:1337>. Create a card under any
 list. Planka fires a webhook to the harness; Aria reads the card and
 decides whether to comment, change its status, or wait for clarification.
 
-The webhook is HMAC-signed and verified by the `http()` source against the
-raw request bytes, before the route runs. An unsigned or tampered request
-is rejected with 401 and never reaches the agent.
+The webhook is authenticated before the route runs. Planka presents
+`PLANKA_WEBHOOK_SECRET` as a bearer token, the http plugin's verifier checks
+it at the edge, and an unauthenticated request is rejected with 401 without
+ever reaching the agent.
+
+It is a token rather than an HMAC signature because Planka cannot sign: its
+webhook sender attaches a static token and nothing else. `lib/webhook-auth.ts`
+explains what that costs and why faking a signature in a shim would be worse.
+Swap Planka for GitHub, Monday, or Stripe, which really do sign, and the
+honest change is to put `signature:` back on the `http()` source.
 
 ### 3. Knowledge query (chat via MCP)
 
@@ -162,12 +285,14 @@ craft-harness/
 |   |-- approvals.ts           approval card encode/decode (+ tests)
 |   |-- scopes.ts              the authorization vocabulary
 |   |-- identity.ts            who each channel acts as (+ tests)
+|   |-- webhook-auth.ts        board webhook credential check (+ tests)
 |   `-- schemas/               shared Zod schemas
 |-- dex/config.yaml            the demo OIDC provider, declared in full
-|-- knowledge/                 the knowledge base, seeded and bind-mounted
-|-- compose.yml                full stack (Greenmail + Planka + Dex + app)
-|-- Dockerfile                 app container
-|-- craft.config.ts            Routecraft config: agent, mail, mcp
+|-- knowledge/                 the knowledge base, seeded markdown
+|-- compose.yml                backing services; the app is an opt-in profile
+|-- Dockerfile                 app container, for that profile
+|-- seed.ts                    creates the Planka project, board, and lists
+|-- craft.config.ts            Routecraft config: agent, mail, mcp, http
 `-- index.ts                   routes + capabilities exports
 ```
 
@@ -300,19 +425,21 @@ ordinary automation:
 
 ## Configuration
 
-All config flows through `env.ts` (Zod-validated). The `compose.yml`
-populates everything except `ANTHROPIC_API_KEY`, which you provide in
-`.env`.
+All config flows through `env.ts` (Zod-validated). Every default there points
+at `localhost`, matching the ports Compose publishes, so running the harness
+with `bun run dev` needs nothing in `.env` but `ANTHROPIC_API_KEY`. The `app`
+profile in `compose.yml` overrides the same variables with container
+hostnames.
 
 To run against real backends instead of mocks, swap the env vars:
 
-| Variable                      | Mock value           | Real value                               |
-| ----------------------------- | -------------------- | ---------------------------------------- |
-| `MAIL_HOST`                   | `greenmail`          | `imap.gmail.com`                         |
-| `MAIL_USER` / `MAIL_PASSWORD` | demo creds           | Gmail user + app password                |
-| `MAIL_TLS`                    | `false`              | `true`                                   |
-| `PLANKA_BASE_URL`             | `http://planka:1337` | swap for a Monday adapter (planned)      |
-| `KNOWLEDGE_DIR`               | `/app/knowledge`     | any directory, including a synced folder |
+| Variable                      | Mock value              | Real value                               |
+| ----------------------------- | ----------------------- | ---------------------------------------- |
+| `MAIL_HOST`                   | `localhost`             | `imap.gmail.com`                         |
+| `MAIL_USER` / `MAIL_PASSWORD` | demo creds              | Gmail user + app password                |
+| `MAIL_TLS`                    | `false`                 | `true`                                   |
+| `PLANKA_BASE_URL`             | `http://localhost:1337` | swap for a Monday adapter (planned)      |
+| `KNOWLEDGE_DIR`               | `./knowledge`           | any directory, including a synced folder |
 
 ## Routecraft framework gaps surfaced by this harness
 
