@@ -24,8 +24,12 @@ const EnvSchema = z.object({
   ANTHROPIC_API_KEY: z.string().min(1, "ANTHROPIC_API_KEY is required"),
   AGENT_MODEL: z.string().optional(),
 
-  // Mail (Greenmail by default for the demo)
-  MAIL_HOST: z.string().default("greenmail"),
+  // Mail (Greenmail by default for the demo).
+  //
+  // Every default below points at localhost, because the app normally runs on
+  // the host against services Compose publishes. `compose.yml` overrides them
+  // with container hostnames when the app runs in the `app` profile.
+  MAIL_HOST: z.string().default("localhost"),
   MAIL_IMAP_PORT: z.coerce.number().default(3143),
   MAIL_SMTP_PORT: z.coerce.number().default(3025),
   MAIL_USER: z.string().default("aria@harness.local"),
@@ -34,7 +38,7 @@ const EnvSchema = z.object({
   MAIL_POLL_INTERVAL_MS: z.coerce.number().default(5000),
 
   // Planka (mock ticket system)
-  PLANKA_BASE_URL: z.string().default("http://planka:1337"),
+  PLANKA_BASE_URL: z.string().default("http://localhost:1337"),
   PLANKA_USER: z.string().default("demo@harness.local"),
   PLANKA_PASSWORD: z.string().default("demo"),
   PLANKA_PROJECT_NAME: z.string().default("Craft Harness"),
@@ -64,8 +68,8 @@ const EnvSchema = z.object({
 
   // Identity (Dex by default). OIDC_ISSUER must match the `issuer` in
   // dex/config.yaml exactly: it is compared against the token's `iss`.
-  OIDC_ISSUER: z.string().default("http://dex:5556/dex"),
-  OIDC_JWKS_URL: z.string().default("http://dex:5556/dex/keys"),
+  OIDC_ISSUER: z.string().default("http://localhost:5556/dex"),
+  OIDC_JWKS_URL: z.string().default("http://localhost:5556/dex/keys"),
   OIDC_AUDIENCE: z.string().default("craft-harness"),
   /**
    * Accept MCP calls that carry no bearer token, treating them as the demo

@@ -8,7 +8,12 @@
 # harness enforces that difference rather than trusting the agent to.
 #   demo@harness.local  / demo   -> may draft email, may NOT send it
 #   admin@harness.local / admin  -> may send email directly
-issuer: http://dex:5556/dex
+# The issuer is baked into every token's `iss` claim and is compared as a
+# string, so it must be the URL a client would actually use. The app runs on
+# the host, so that is localhost, not the container hostname. Reaching Dex over
+# the Compose network still works: OIDC_JWKS_URL is a separate setting, and the
+# `app` profile points it at http://dex:5556/dex/keys while `iss` stays this.
+issuer: http://localhost:5556/dex
 
 storage:
   type: memory

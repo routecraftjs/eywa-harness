@@ -21,12 +21,46 @@ services:
     ports:
       - "3025:3025" # SMTP
       - "3143:3143" # IMAP
-      - "8025:8025" # Web UI
+      - "8080:8080" # REST API and its OpenAPI browser (not a mail client)
     healthcheck:
-      test: ["CMD", "sh", "-c", "echo > /dev/tcp/127.0.0.1/3025"]
+      # The image has no curl, wget, or nc, so probe the sockets with bash's
+      # /dev/tcp. Not sh: /bin/sh here is dash, which has no /dev/tcp and fails
+      # the check even when Greenmail is up. IMAP is checked as well as SMTP
+      # because the app dies if its mail source cannot connect.
+      test:
+        [
+          "CMD",
+          "bash",
+          "-c",
+          "echo > /dev/tcp/127.0.0.1/3025 && echo > /dev/tcp/127.0.0.1/3143",
+        ]
       interval: 5s
       timeout: 3s
       retries: 10
+
+  # Greenmail speaks SMTP and IMAP but ships no mail client: what it serves on
+  # 8080 is a REST API and an OpenAPI browser for it. Roundcube is the actual
+  # webmail, so writing to Aria is a compose window rather than a curl command,
+  # and her approved replies arrive somewhere you can read them.
+  #
+  # Greenmail runs with `greenmail.auth.disabled`, so any password works. Log
+  # in as jaco@harness.local or demo@harness.local.
+  webmail:
+    image: roundcube/roundcubemail:1.7.2-apache
+    depends_on:
+      greenmail:
+        condition: service_healthy
+    environment:
+      ROUNDCUBEMAIL_DEFAULT_HOST: greenmail
+      ROUNDCUBEMAIL_DEFAULT_PORT: 3143
+      ROUNDCUBEMAIL_SMTP_SERVER: greenmail
+      ROUNDCUBEMAIL_SMTP_PORT: 3025
+      # Nothing here is worth keeping between runs, and sqlite spares the demo
+      # a second database container.
+      ROUNDCUBEMAIL_DB_TYPE: sqlite
+      ROUNDCUBEMAIL_PLUGINS: ""
+    ports:
+      - "8000:80"
 
   postgres:
     image: postgres:16-alpine
@@ -43,7 +77,7 @@ services:
       retries: 10
 
   planka:
-    image: ghcr.io/plankanban/planka:1.26.4
+    image: ghcr.io/plankanban/planka:1.26.3
     depends_on:
       postgres:
         condition: service_healthy
@@ -55,6 +89,29 @@ services:
       DEFAULT_ADMIN_PASSWORD: demo
       DEFAULT_ADMIN_NAME: Demo Admin
       DEFAULT_ADMIN_USERNAME: demo
+      # Without this Planka's webhook sender is switched off entirely and the
+      # board never tells the harness anything: creating a card or dragging one
+      # to Approved would silently do nothing.
+      #
+      # `accessToken` is the only credential Planka can attach. It arrives as
+      # `Authorization: Bearer <token>` and must match PLANKA_WEBHOOK_SECRET on
+      # the app, which is what the http plugin's verifier checks.
+      #
+      # The default target is the host, because the app normally runs there
+      # under `bun run dev`. Running the app in Compose instead (the `app`
+      # profile) means pointing this at the container:
+      #
+      #   APP_WEBHOOK_URL=http://app:3000/webhooks/planka
+      #
+      # Prefer the host even while iterating: a container that is rebuilt gets
+      # a new IP, and Planka keeps its HTTP connections alive, so deliveries go
+      # to the dead address until Planka itself is restarted. It logs nothing
+      # when that happens. The host address does not move.
+      WEBHOOKS: '[{"url":"${APP_WEBHOOK_URL:-http://host.docker.internal:3000/webhooks/planka}","accessToken":"${PLANKA_WEBHOOK_SECRET:-dev-secret-change-me}","events":["cardCreate","cardUpdate"]}]'
+    # Docker Desktop resolves host.docker.internal already; on Linux it has to
+    # be mapped explicitly or the webhook above has nowhere to go.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - planka-attachments:/app/public/user-avatars
       - planka-uploads:/app/private/attachments
@@ -69,6 +126,30 @@ services:
       interval: 10s
       timeout: 5s
       retries: 12
+
+  # Creates the project, board, and lists the ticket capabilities resolve by
+  # name, then exits. Without it a fresh clone fails its first ticket with
+  # `Planka project "Craft Harness" not found`.
+  #
+  # Runs on the stock Bun image with `seed.ts` mounted, rather than building
+  # the app image. The script imports nothing, so it needs no node_modules,
+  # and seeding the board must not depend on the app being built at all.
+  seed:
+    image: oven/bun:1.3.9
+    volumes:
+      - ./seed.ts:/seed.ts:ro
+    command: ["bun", "run", "/seed.ts"]
+    restart: "no"
+    depends_on:
+      planka:
+        condition: service_healthy
+    environment:
+      PLANKA_BASE_URL: http://planka:1337
+      PLANKA_USER: demo@harness.local
+      PLANKA_PASSWORD: demo
+      PLANKA_PROJECT_NAME: Craft Harness
+      PLANKA_BOARD_NAME: Tasks
+      PLANKA_APPROVAL_LIST: Approved
 
   dex:
     image: ghcr.io/dexidp/dex:v2.44.0
@@ -91,8 +172,20 @@ services:
       timeout: 3s
       retries: 12
 
+  # The harness itself, containerised. Opt-in, and not how you should develop.
+  #
+  #   docker compose --profile app up -d
+  #   APP_WEBHOOK_URL=http://app:3000/webhooks/planka   # in .env, or Planka
+  #                                                     # keeps posting to the host
+  #
+  # Left out of the default `up` on purpose. Everything else here is a backing
+  # service you never edit; the app is the thing you change every few minutes,
+  # and `bun run dev` reloads it instantly instead of rebuilding an image. It
+  # also keeps a stable address, which is what Planka's webhook sender wants.
   app:
+    profiles: ["app"]
     build: .
+    image: craft-harness-app
     # The app exits fatally if IMAP becomes unreachable (mail source retries,
     # then shuts the context down), so let Compose bring it back.
     restart: unless-stopped
@@ -103,6 +196,8 @@ services:
         condition: service_healthy
       dex:
         condition: service_healthy
+      seed:
+        condition: service_completed_successfully
     environment:
       LOG_LEVEL: info
 
@@ -134,7 +229,10 @@ services:
       # demand a real Dex token; scopes are enforced on capabilities either
       # way. See "Identity, and why the agent is not in the trust path" in
       # the README.
-      OIDC_ISSUER: http://dex:5556/dex
+      # `iss` is a string claim and must match what Dex mints, which is the
+      # host URL. Only the JWKS fetch is a real network call, so only that one
+      # becomes a container hostname here.
+      OIDC_ISSUER: http://localhost:5556/dex
       OIDC_JWKS_URL: http://dex:5556/dex/keys
       OIDC_AUDIENCE: craft-harness
       AUTH_DISABLED: ${AUTH_DISABLED:-true}
