@@ -1,8 +1,14 @@
 import { agents } from "@routecraft/ai";
-import { defineConfig, jwks, type CraftConfig } from "@routecraft/routecraft";
+import {
+  apiKey,
+  defineConfig,
+  jwks,
+  type CraftConfig,
+} from "@routecraft/routecraft";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { env } from "./env.js";
+import { isAuthorizedWebhook } from "./lib/webhook-auth.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -42,12 +48,35 @@ export const craftConfig: CraftConfig = defineConfig({
       anthropic: { apiKey: env.ANTHROPIC_API_KEY },
     },
   },
-  // Inbound HTTP server for the Planka webhook. Per-route signature
-  // verification lives on the route; no global auth strategy is configured
-  // because the only ingress is a signed webhook.
+  /**
+   * Inbound HTTP server for the Planka webhook.
+   *
+   * The webhook receiver is the only `http()` source in the harness, so this
+   * verifier guards exactly one endpoint. Everything else that touches Planka
+   * uses `http()` as a client, which this does not affect.
+   *
+   * Verification happens here, at the edge, rather than as a step inside the
+   * route: an unauthenticated request is answered 401 by the plugin and the
+   * route never runs, so nothing downstream has to remember to check. See
+   * `lib/webhook-auth.ts` for why this is a bearer token and not an HMAC
+   * signature.
+   */
   http: {
     host: env.APP_HOST,
     port: env.APP_PORT,
+    auth: apiKey({
+      in: "header",
+      name: "authorization",
+      verify: (presented) =>
+        isAuthorizedWebhook(presented, env.PLANKA_WEBHOOK_SECRET)
+          ? {
+              kind: "custom",
+              scheme: "webhook",
+              subject: "planka",
+              issuer: "craft-harness",
+            }
+          : null,
+    }),
   },
   mail: {
     accounts: {

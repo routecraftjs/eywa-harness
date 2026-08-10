@@ -30,10 +30,16 @@ const OutputSchema = z.object({
 type Input = z.infer<typeof InputSchema>;
 type WithAuth = Input & { token: string };
 
+/**
+ * A comment as Planka returns it.
+ *
+ * Comments are "actions" in Planka's model, not their own resource, so the
+ * body arrives under `data.text` rather than a top-level `text`.
+ */
 interface PlankaComment {
   id: string;
   cardId: string;
-  text: string;
+  data: { text: string };
   createdAt: string;
 }
 
@@ -55,7 +61,10 @@ export default craft()
   .enrich(
     http<WithAuth, { item: PlankaComment }>({
       method: "POST",
-      url: (ex) => `${env.PLANKA_BASE_URL}/api/cards/${ex.body.id}/comments`,
+      // `/comments` does not exist and answers 404. Planka models a comment
+      // as an action on the card, so the collection is `comment-actions`.
+      url: (ex) =>
+        `${env.PLANKA_BASE_URL}/api/cards/${ex.body.id}/comment-actions`,
       headers: (ex) => authHeader(ex.body.token),
       body: (ex: Exchange<WithAuth>) => ({ text: ex.body.text }),
     }),
@@ -64,6 +73,6 @@ export default craft()
   .transform((body) => ({
     id: body.comment.id,
     ticketId: body.comment.cardId,
-    text: body.comment.text,
+    text: body.comment.data.text,
     createdAt: body.comment.createdAt,
   }));

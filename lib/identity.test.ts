@@ -26,6 +26,7 @@ import {
   ANONYMOUS_FALLBACK,
   ARIA,
   approvedByBoard,
+  boardEvent,
   ceilingFor,
   digest,
   mailbox,
@@ -162,12 +163,38 @@ describe("the weekly digest sends on its own authority", () => {
   });
 });
 
+describe("a board webhook may look before anything is decided", () => {
+  const claims = boardEvent("card-42");
+
+  /**
+   * The approval branch re-reads the card before it can know whether a human
+   * approved anything, so the read needs authority of its own. This is that
+   * authority, and it must stay the weakest thing that can do the job.
+   */
+  it("may read the board", async () => {
+    expect(
+      await canReach(claims, SCOPES.TICKETS_READ, { asDelegate: false }),
+    ).toBe(true);
+  });
+
+  it("may not send, draft, or change anything", async () => {
+    for (const scope of [
+      SCOPES.MAIL_SEND,
+      SCOPES.MAIL_DRAFT,
+      SCOPES.TICKETS_WRITE,
+      SCOPES.KB_WRITE,
+    ]) {
+      expect(await canReach(claims, scope, { asDelegate: false })).toBe(false);
+    }
+  });
+});
+
 describe("the approval branch is the only agent-adjacent source of mail:send", () => {
   const claims = approvedByBoard("card-42");
 
-  // Reached only after the HMAC verified and a human moved the card. This
-  // principal is minted by a deterministic route, not handed to the agent,
-  // so it is checked without a delegate.
+  // Reached only after the webhook authenticated and a human moved the card.
+  // This principal is minted by a deterministic route, not handed to the
+  // agent, so it is checked without a delegate.
   it("may send, because a human already approved the exact text", async () => {
     expect(
       await canReach(claims, SCOPES.MAIL_SEND, { asDelegate: false }),

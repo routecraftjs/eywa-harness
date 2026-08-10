@@ -116,6 +116,28 @@ export const digest = (): PrincipalClaims => ({
 });
 
 /**
+ * The identity a verified board webhook acts as while it works out what the
+ * event actually means.
+ *
+ * Read-only, and deliberately so. The approval branch cannot know whether a
+ * human approved anything until it has re-read the card, and that read needs
+ * authority of its own. The alternative is minting `approvedByBoard()` up
+ * front and reading with it, which would hand out `mail:send` on the strength
+ * of the webhook alone: precisely the property the approval flow exists to
+ * prevent. So the read runs on this, and the stronger identity is minted only
+ * once the card has been found sitting in the approved list.
+ */
+export const boardEvent = (cardId: string): PrincipalClaims => ({
+  kind: "custom",
+  scheme: "board",
+  subject: "board:webhook",
+  subjectProfile: "service",
+  issuer: "craft-harness",
+  scopes: [SCOPES.TICKETS_READ],
+  claims: { card: cardId },
+});
+
+/**
  * The identity the approval executor acts as.
  *
  * The only place `mail:send` is minted anywhere the agent can reach, and it is

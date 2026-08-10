@@ -11,15 +11,21 @@ import {
 import { env } from "../env.js";
 import type { TicketSummary } from "../lib/planka.js";
 import { parseApprovalAction } from "../lib/approvals.js";
-import { approvedByBoard, ARIA, scheduled } from "../lib/identity.js";
+import {
+  approvedByBoard,
+  ARIA,
+  boardEvent,
+  scheduled,
+} from "../lib/identity.js";
 
 /**
  * Inbound ticket event from the Planka mock board.
  *
  * Planka POSTs to `/webhooks/planka` whenever a card is created or updated,
- * signed with `PLANKA_WEBHOOK_SECRET` via HMAC-SHA256 (hex). The source
- * verifies that signature against the raw request bytes and rejects with 401
- * before the route runs, so nothing below executes on an unsigned request.
+ * presenting `PLANKA_WEBHOOK_SECRET` as a bearer token. The http plugin's
+ * verifier checks it and rejects with 401 before the route runs, so nothing
+ * below executes for an unauthenticated caller. `lib/webhook-auth.ts` explains
+ * why this is a token rather than a signature, and what that costs.
  *
  * The two branches run on deliberately different authority. The approval
  * branch mints `mail:send`, and it does so only after the card has been
@@ -49,12 +55,10 @@ export default craft()
     http({
       path: "/webhooks/planka",
       method: "POST",
-      auth: "skip",
-      signature: {
-        header: "x-webhook-signature",
-        secret: env.PLANKA_WEBHOOK_SECRET,
-        scheme: "hmac-sha256-hex",
-      },
+      // The plugin's apiKey verifier in craft.config.ts runs first and answers
+      // 401 itself, so nothing below executes for a caller that cannot present
+      // PLANKA_WEBHOOK_SECRET.
+      auth: "required",
     }),
   )
   // Cheap synchronous pre-filter: does the card even carry an approval
@@ -73,6 +77,10 @@ export default craft()
       (ex) => ex.body.candidate && ex.body.id !== "",
       (b) =>
         b
+          // Read-only authority for the re-read below. The webhook verified,
+          // which is enough to look at a card and no more; whether anything
+          // may be sent is still an open question at this point.
+          .authenticate((ex) => boardEvent(ex.body.id))
           // Re-read the card from Planka rather than trusting the webhook:
           // the authorisation is the card's CURRENT list, and the payload
           // that gets sent must be the one on the board right now.
@@ -89,12 +97,12 @@ export default craft()
                 env.PLANKA_APPROVAL_LIST.toLowerCase() &&
               parseApprovalAction(ex.body.ticket.body) !== null,
           )
-          // Only now is mail:send minted: HMAC verified, and a human moved
-          // the card. Neither fact alone is enough, and the agent supplies
-          // neither of them.
-          // Sanctioned minting site: reached only after the HMAC verified AND
-          // the card was re-read from the board in the approved list, which
-          // only a human can arrange.
+          // Only now is mail:send minted: the caller authenticated, and a
+          // human moved the card. Neither fact alone is enough, and the agent
+          // supplies neither of them.
+          // Sanctioned minting site: reached only after the webhook
+          // authenticated AND the card was re-read from the board in the
+          // approved list, which only a human can arrange.
           //
           // The restrict-principal-minting lint rule does NOT see this call,
           // because it sits inside a choice branch rather than on the route's
