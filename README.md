@@ -333,7 +333,7 @@ and they are deliberately not equal:
 | ------------------------------ | ---------------------------------------------------- | ------------------ |
 | MCP chat                       | the caller in the bearer token, Aria acting for them | if that person can |
 | Email                          | the mailbox, never the sender                        | no                 |
-| Ticket webhook (triage)        | the harness itself                                   | no                 |
+| Ticket webhook (triage)        | the board, never the card's author                   | no                 |
 | Ticket webhook (approved card) | the board's approved list                            | yes                |
 | Cron (heartbeat)               | the harness itself                                   | no                 |
 | Cron (weekly digest)           | the digest job                                       | to a fixed address |
@@ -343,7 +343,7 @@ header names who wrote in; it says nothing about what they may ask an agent to
 do, and this demo's mail server will accept any address anyone types. So a
 mail-triggered run acts as the mailbox, and the mailbox cannot send. The only
 place `mail:send` reaches anything the agent touches is the approval branch,
-and only after two independent facts hold: the webhook's HMAC verified, and the
+and only after two independent facts hold: the webhook authenticated, and the
 card was re-read and found in the approved list. A human put it there. Aria has
 no capability that can.
 

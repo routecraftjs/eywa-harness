@@ -3,7 +3,6 @@ import {
   craft,
   direct,
   http,
-  mail,
   only,
   otherwise,
   when,
@@ -15,7 +14,7 @@ import {
   approvedByBoard,
   ARIA,
   boardEvent,
-  scheduled,
+  boardTriage,
 } from "../lib/identity.js";
 
 /**
@@ -117,12 +116,18 @@ export default craft()
               body: {
                 to: action.to,
                 subject: action.subject,
-                text: action.body,
+                body: action.body,
                 inReplyTo: undefined,
               },
             };
           })
-          .to(mail({ account: "default" }))
+          // Through the capability, not `mail()` directly. Reaching for the
+          // adapter here would send without ever testing `mail:send`, leaving
+          // the scope minted above decorative: the branch would be safe only
+          // because of the filter, and the authorization layer would be
+          // asserting nothing. Every outbound mail goes through this route so
+          // that the check is real everywhere.
+          .to(direct("send-email"))
           .process((ex) => ({
             ...ex,
             body: {
@@ -135,12 +140,14 @@ export default craft()
     ),
     otherwise((b) =>
       b
-        // Board traffic is not a person. Aria triages it on the harness's own
-        // authority, which cannot send mail.
+        // A card is not its author: the event says something moved, never who
+        // may act on it. So Aria triages as the board, on the same authority
+        // the mailbox gets, and like the mailbox she cannot send mail. She can
+        // park a draft, which is the honest answer when a card asks her to
+        // write to someone.
         // Sanctioned minting site (also invisible to the lint rule, see
-        // above): the harness's own narrow authority for triage, which
-        // cannot send mail.
-        .authenticate(() => scheduled("ticket-event"))
+        // above): a channel identity for triage, with no mail:send in it.
+        .authenticate((ex) => boardTriage(ex.body.id))
         .delegate(() => ({ actor: ARIA }))
         .to(agent("aria"))
         .transform((): Handled => ({ handled: "agent" })),

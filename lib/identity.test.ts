@@ -27,6 +27,7 @@ import {
   ARIA,
   approvedByBoard,
   boardEvent,
+  boardTriage,
   ceilingFor,
   digest,
   mailbox,
@@ -106,6 +107,34 @@ describe("email acts as the mailbox", () => {
   it("records who wrote in without treating it as authority", async () => {
     expect(claims.claims?.received_from).toBe("anyone@example.test");
     expect(claims.subject).not.toContain("anyone@example.test");
+  });
+});
+
+describe("a ticket event acts as the board", () => {
+  const claims = boardTriage("card-7");
+
+  /**
+   * Deliberately the same authority as the mailbox. Both channels are woken
+   * by a person doing something on purpose, so a request that works by email
+   * must work when typed into a card. The asymmetry this replaced was not a
+   * decision, it was a borrowed cron identity.
+   */
+  it("matches the mailbox, so neither channel is quietly weaker", async () => {
+    const inbox = mailbox("anyone@example.test");
+    for (const scope of Object.values(SCOPES)) {
+      expect(await canReach(claims, scope)).toBe(await canReach(inbox, scope));
+    }
+  });
+
+  it("may write knowledge and park a draft", async () => {
+    expect(await canReach(claims, SCOPES.KB_WRITE)).toBe(true);
+    expect(await canReach(claims, SCOPES.MAIL_DRAFT)).toBe(true);
+  });
+
+  // The card is the trigger, never the authority. Anyone who can type into a
+  // description would otherwise be able to talk the agent into sending mail.
+  it("may not send mail, whatever the card says", async () => {
+    expect(await canReach(claims, SCOPES.MAIL_SEND)).toBe(false);
   });
 });
 

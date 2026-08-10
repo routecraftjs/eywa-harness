@@ -33,18 +33,25 @@ export const ARIA: PrincipalClaims = {
 };
 
 /**
- * What the mailbox itself may authorise.
+ * What a channel a person just used may authorise.
  *
- * Inbound mail is unauthenticated in this demo: Greenmail accepts any sender,
- * and even a real inbox only tells you DKIM passed, never what the sender may
- * ask of an agent. So a mail-triggered run acts as the mailbox, not as the
- * person who wrote in, and the mailbox may read, file tickets, and draft.
+ * Shared by the mailbox and the board deliberately, as one constant rather
+ * than two identical lists, because the thing they have in common is the
+ * thing that decides the answer: somebody did something on purpose and is
+ * waiting to see what happens. That is what separates these channels from
+ * cron, and it is what earns them `kb:write` and `mail:draft`.
+ *
+ * Neither identity is the person, though. Inbound mail is unauthenticated in
+ * this demo, and even a real inbox only tells you DKIM passed, never what the
+ * sender may ask of an agent; a board event tells you a card moved, not who
+ * may act on it. So a triggered run acts as the channel, and the channel may
+ * read, file tickets, write notes, and draft.
  *
  * `mail:send` is absent on purpose. It is the one authority that puts
- * something outside the building, and the only route to it from this channel
- * is a draft a human approves by moving a card.
+ * something outside the building, and the only route to it from either
+ * channel is a draft a human approves by moving a card.
  */
-const MAILBOX_SCOPES: readonly Scope[] = [
+const TRIGGERED_SCOPES: readonly Scope[] = [
   SCOPES.TICKETS_READ,
   SCOPES.TICKETS_WRITE,
   SCOPES.KB_READ,
@@ -72,8 +79,37 @@ export const mailbox = (sender: string): PrincipalClaims => ({
   subject: `mailbox:${env.MAIL_USER}`,
   subjectProfile: "service",
   issuer: "craft-harness",
-  scopes: [...MAILBOX_SCOPES],
+  scopes: [...TRIGGERED_SCOPES],
   claims: { received_from: sender },
+});
+
+/**
+ * The identity a board-triggered triage run acts as.
+ *
+ * Its own identity rather than `scheduled()`, which it used to borrow. That
+ * was an inheritance from a name, not a decision: `scheduled()` is narrowed
+ * because nobody is watching a cron job, and a board event is the opposite
+ * case, a person who just created or moved a card and is waiting.
+ *
+ * Borrowing it also made the harness quietly asymmetric. Mail-triggered Aria
+ * could park an approval draft; board-triggered Aria could not, so "email the
+ * supplier and accept" refused when typed into a card and worked when sent by
+ * email, for no reason a user could see. If anything the board is the better
+ * authenticated of the two: the webhook proved a shared secret and the card
+ * came from a signed-in Planka user, where a `From:` header proves nothing.
+ *
+ * The route already assumed this. Its filter drops approval cards that are
+ * not yet in the approved list precisely so that Aria is not woken by the
+ * very draft she just filed, which is only reachable if she can file one.
+ */
+export const boardTriage = (cardId: string): PrincipalClaims => ({
+  kind: "custom",
+  scheme: "board",
+  subject: "board:triage",
+  subjectProfile: "service",
+  issuer: "craft-harness",
+  scopes: [...TRIGGERED_SCOPES],
+  claims: { card: cardId },
 });
 
 /**
