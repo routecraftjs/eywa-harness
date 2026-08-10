@@ -144,8 +144,9 @@ curl -s http://localhost:8080/api/user/procurement@acme-supplies.test/messages/I
 
 > How many vacation days do I have left?
 
-She says plainly that she cannot, and files a card describing the request, what
-she tried, and what would have solved it.
+She says plainly that she cannot, names what is missing, and offers to file a
+capability gap. Say yes and a `report-gap` card appears carrying the original
+request, what she tried, and what would have solved it.
 
 ### If nothing happens
 
@@ -217,10 +218,12 @@ point of doing it this way rather than asking the model to be careful.
 ### 6. The backlog that writes itself
 
 Ask for something no tool covers: _"How many vacation days do I have
-left?"_ Aria says plainly that she cannot, then files a `report-gap` card
-carrying the original request, what she tried, and what would have solved
-it. A real request that hit a real wall is a better backlog item than any
-speculative roadmap entry, and the card is the spec.
+left?"_ Aria says plainly that she cannot, names the tool she would need,
+and offers to file a `report-gap` card carrying the original request, what
+she tried, and what would have solved it. She asks before filing rather than
+putting a card on your board uninvited. A real request that hit a real wall
+is a better backlog item than any speculative roadmap entry, and the card is
+the spec.
 
 ### 7. Ask it about Routecraft itself
 
