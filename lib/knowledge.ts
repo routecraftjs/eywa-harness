@@ -32,7 +32,7 @@ export interface KnowledgeFile {
  * paths, while `path.resolve` normalises all three before the comparison.
  *
  * Restricting to `.md` is the same argument continued. Every capability in
- * this harness reads and writes markdown, so anything else is either a typo
+ * this showcase reads and writes markdown, so anything else is either a typo
  * or an attempt to use the knowledge base as general file storage.
  */
 export function resolveKnowledgePath(root: string, relative: string): string {

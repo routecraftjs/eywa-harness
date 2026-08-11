@@ -10,9 +10,9 @@ what?" questions and to remember new joiners when she is told about them.
 
 ## People
 
-- **Demo Admin** (demo@harness.local) — overall admin and stand-in for the
+- **Demo Admin** (demo@showcase.local) — overall admin and stand-in for the
   Jaco-style owner. Default Planka login.
-- **Aria** (aria@harness.local) — the AI agent itself. Office Manager
+- **Aria** (aria@showcase.local) — the AI agent itself. Office Manager
   persona. Talks to humans on email, on the kanban, and over MCP.
 
 ## How to add someone
@@ -22,4 +22,4 @@ new entry under "## People" using `knowledge-append` with `path: "team.md"`.
 
 A normal entry looks like:
 
-- **Anna Smith** (anna@harness.local) — Frontend engineer, started 2026-04-28.
+- **Anna Smith** (anna@showcase.local) — Frontend engineer, started 2026-04-28.

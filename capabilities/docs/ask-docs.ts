@@ -46,10 +46,10 @@ type WithMatches = WithIndex & { matches: DocEntry[] };
 /**
  * Answer questions about Routecraft (and DevOptix) from the live docs.
  *
- * The harness ships no copy of the documentation. It reads the published
+ * The showcase ships no copy of the documentation. It reads the published
  * `llms.txt` index, picks the pages a question is about, and fetches their
  * markdown, so an answer is never staler than the website and a docs fix
- * needs no harness release.
+ * needs no showcase release.
  *
  * It also means the agent can do something useful the moment it starts,
  * before anyone has configured a single backend: ask it what Routecraft is
@@ -58,7 +58,7 @@ type WithMatches = WithIndex & { matches: DocEntry[] };
 export default craft()
   .id("ask-docs")
   .description(
-    "Answer questions about Routecraft (the framework this harness is built on) or DevOptix (the company behind it), using the live published documentation. Use this whenever someone asks what Routecraft is, how it works, or how to build something with it.",
+    "Answer questions about Routecraft (the framework this showcase is built on) or DevOptix (the company behind it), using the live published documentation. Use this whenever someone asks what Routecraft is, how it works, or how to build something with it.",
   )
   .input({ body: InputSchema })
   .output({ body: ResultSchema })

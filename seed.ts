@@ -1,9 +1,9 @@
 /**
- * Seed the Planka board the harness expects.
+ * Seed the Planka board the showcase expects.
  *
  * `compose.yml` runs this once, before the app starts, so a fresh clone has a
  * project, a board, and the lists the capabilities resolve by name. Without it
- * every ticket operation fails on `Planka project "Craft Harness" not found`.
+ * every ticket operation fails on `Planka project "Craft Showcase" not found`.
  *
  * Idempotent by design: it looks each entity up by name and creates only what
  * is missing, so `docker compose up` on an existing volume is a no-op rather
@@ -16,9 +16,9 @@
  */
 
 const BASE_URL = process.env["PLANKA_BASE_URL"] ?? "http://planka:1337";
-const USER = process.env["PLANKA_USER"] ?? "demo@harness.local";
+const USER = process.env["PLANKA_USER"] ?? "demo@showcase.local";
 const PASSWORD = process.env["PLANKA_PASSWORD"] ?? "demo";
-const PROJECT_NAME = process.env["PLANKA_PROJECT_NAME"] ?? "Craft Harness";
+const PROJECT_NAME = process.env["PLANKA_PROJECT_NAME"] ?? "Craft Showcase";
 const BOARD_NAME = process.env["PLANKA_BOARD_NAME"] ?? "Tasks";
 const APPROVAL_LIST = process.env["PLANKA_APPROVAL_LIST"] ?? "Approved";
 

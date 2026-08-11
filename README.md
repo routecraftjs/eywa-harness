@@ -6,18 +6,38 @@
 
 </div>
 
-# Craft Harness
+# Craft Showcase
 
-A working AI agent in about a minute. Built on
-[Routecraft](https://routecraft.dev).
+Routecraft with everything turned on. One agent reachable over email, a kanban
+board, and MCP; a markdown knowledge base she reads and writes; scope-checked
+capabilities; and a human approval step that is a board state rather than a
+prompt. Built on [Routecraft](https://routecraft.dev).
 
 `docker compose up -d` for the backing services, `bun run dev` for the agent.
 Then send her an email, create a kanban card, or talk to her over MCP. No real
 Gmail, Monday, or GitHub credentials required.
 
+## Start smaller than this
+
+This is the far end, not the front door. Routecraft ships the agent harness
+itself, so none of the infrastructure below is what you need to run an agent:
+
+```bash
+bun create routecraft
+```
+
+That gives you a capability and an agent with no Docker, no mail server, and no
+identity provider. Or open the
+[playground](https://codespaces.new/routecraftjs/craft-playground) and skip the
+install entirely.
+
+Come back here when you want the same primitives fully assembled.
+
 ## Why this exists
 
-This is a flagship example for Routecraft. It demonstrates:
+This repository is where Routecraft's claims get exercised at full size: the
+best-practice reference, the source of the samples the blog posts quote, and
+the smoke test a release has to survive. It demonstrates:
 
 - A typed Routecraft pipeline with three input channels (email, kanban
   webhook, MCP) feeding a single AI agent.
@@ -31,12 +51,12 @@ This is a flagship example for Routecraft. It demonstrates:
 
 You need Docker, [Bun](https://bun.sh), and an Anthropic API key.
 
-Compose runs the backing services. The harness itself runs on your machine,
+Compose runs the backing services. The showcase itself runs on your machine,
 because it is the part you are here to read and change.
 
 ```bash
-git clone https://github.com/routecraftjs/craft-harness.git
-cd craft-harness
+git clone https://github.com/routecraftjs/craft-showcase.git
+cd craft-showcase
 
 cp .env.example .env
 # Edit .env and set ANTHROPIC_API_KEY=sk-ant-...
@@ -54,8 +74,8 @@ Then open:
 
 | What               | Where                                                        | Notes                                                      |
 | ------------------ | ------------------------------------------------------------ | ---------------------------------------------------------- |
-| **Webmail**        | <http://localhost:8000>                                      | log in as `jaco@harness.local`, **any password**           |
-| **Kanban board**   | <http://localhost:1337>                                      | `demo@harness.local` / `demo`                              |
+| **Webmail**        | <http://localhost:8000>                                      | log in as `jaco@showcase.local`, **any password**          |
+| **Kanban board**   | <http://localhost:1337>                                      | `demo@showcase.local` / `demo`                             |
 | **MCP endpoint**   | `http://localhost:3001/mcp`                                  | point Claude Desktop or Cursor here                        |
 | **Knowledge base** | the `knowledge/` folder                                      | plain markdown in your working copy                        |
 | **Dex (OIDC)**     | <http://localhost:5556/dex/.well-known/openid-configuration> | only needed if you turn auth on                            |
@@ -66,7 +86,7 @@ no mail client of its own and runs with authentication disabled, so any
 password logs you in as any of the seeded users (`jaco@`, `demo@`, `aria@`).
 
 <details>
-<summary>Running the harness in Docker too</summary>
+<summary>Running the showcase in Docker too</summary>
 
 ```bash
 echo 'APP_WEBHOOK_URL=http://app:3000/webhooks/planka' >> .env
@@ -88,7 +108,7 @@ until Planka is restarted. It logs nothing when that happens.
 Do these in order. Each one takes a few seconds of agent thinking time.
 
 **1. Mail her something ordinary.** At <http://localhost:8000>, logged in as
-`jaco@harness.local`, write to `aria@harness.local`:
+`jaco@showcase.local`, write to `aria@showcase.local`:
 
 > Subject: The office wifi keeps dropping
 > The wifi in the Amsterdam office has dropped three times today. Can you log
@@ -134,7 +154,8 @@ She will not send it. A card named **Approve email: ...** appears in
 you like, then **drag the card to the Approved list**.
 
 That drag is the send. The card gets a comment reading _"Approved and sent.
-Recorded by the harness, not by Aria."_, and the mail is really delivered:
+Recorded by the approval route, not by Aria."_, and the mail is really
+delivered:
 
 ```bash
 curl -s http://localhost:8080/api/user/procurement@acme-supplies.test/messages/INBOX | jq -r '.[].subject'
@@ -162,7 +183,7 @@ The walkthrough above is the how. This is the why, in the same order.
 
 ### 1. Email triage
 
-Mail arriving for `aria@harness.local` wakes a route that hands the message to
+Mail arriving for `aria@showcase.local` wakes a route that hands the message to
 her. She decides what to do with it: file a ticket, write to the knowledge
 base, or draft a reply.
 
@@ -175,7 +196,7 @@ which parks the draft on the board for scenario 5.
 ### 2. Ticket triage
 
 Open the Planka board at <http://localhost:1337>. Create a card under any
-list. Planka fires a webhook to the harness; Aria reads the card and
+list. Planka fires a webhook to the showcase; Aria reads the card and
 decides whether to comment, change its status, or wait for clarification.
 
 The webhook is authenticated before the route runs. Planka presents
@@ -230,10 +251,10 @@ the spec.
 Before you configure a single backend, ask the agent _"What is Routecraft?"_
 and it answers from the live documentation.
 
-The harness ships **no copy of the docs**. `ask-docs` reads the `llms.txt`
+The showcase ships **no copy of the docs**. `ask-docs` reads the `llms.txt`
 index that routecraft.dev and devoptix.nl already publish, ranks the pages a
 question is about, and fetches that page's markdown. An answer is therefore
-never staler than the website, and a docs fix needs no harness release.
+never staler than the website, and a docs fix needs no showcase release.
 
 This is also the one place `.cache()` genuinely belongs: the docs are remote,
 read-only, and change on a release cadence. Contrast the knowledge base,
@@ -271,7 +292,7 @@ input is typed and the blast radius shows up in a diff.
 ## Project layout
 
 ```
-craft-harness/
+craft-showcase/
 |-- agents/aria.md             persona system prompt + tool list
 |-- capabilities/              agent tools, one per file
 |   |-- tickets/               kanban operations + report-gap
@@ -308,7 +329,7 @@ belong to the pipeline.
 
 Two internal routes carry what every board call needs. `planka-token` logs in
 and caches the bearer token with a step-scope `.cache()`, so one login serves
-the whole harness. `planka-board` resolves project to board to lists through
+the whole showcase. `planka-board` resolves project to board to lists through
 chained `.enrich()` steps, each adding what it learned to the body.
 
 Capabilities then compose: `report-gap` and `request-approval` do not know how
@@ -338,7 +359,7 @@ and they are deliberately not equal:
 | Email                          | the mailbox, never the sender                        | no                 |
 | Ticket webhook (triage)        | the board, never the card's author                   | no                 |
 | Ticket webhook (approved card) | the board's approved list                            | yes                |
-| Cron (heartbeat)               | the harness itself                                   | no                 |
+| Cron (heartbeat)               | the showcase itself                                  | no                 |
 | Cron (weekly digest)           | the digest job                                       | to a fixed address |
 
 The rule underneath is that identification is not authorization. A `From:`
@@ -353,7 +374,7 @@ no capability that can.
 The weekly digest also sends, and it is the exception that proves the rule: no
 model sits in its path, the recipient comes from configuration, and it still
 goes through the `send-email` capability rather than reaching for the mail
-adapter directly. Every outbound mail in the harness passes the same check.
+adapter directly. Every outbound mail in the showcase passes the same check.
 
 `lib/identity.test.ts` asserts this whole table, refusals included. If the
 table and the code ever disagree, the test is the one that is right.
@@ -364,8 +385,8 @@ demands a real token:
 
 ```bash
 TOKEN=$(curl -s http://localhost:5556/dex/token \
-  -d grant_type=password -d client_id=craft-harness \
-  -d username=demo@harness.local -d password=demo \
+  -d grant_type=password -d client_id=craft-showcase \
+  -d username=demo@showcase.local -d password=demo \
   -d scope=openid+email | jq -r .id_token)
 
 curl http://localhost:3001/mcp -H "Authorization: Bearer $TOKEN" ...
@@ -378,8 +399,8 @@ do: it decides whether the MCP edge insists callers prove who they are. Scopes
 are enforced on capabilities either way, because every channel mints a
 principal.
 
-Ask `demo@harness.local` to email someone and you get a draft on the board.
-Ask `admin@harness.local` and it sends. Same prompt, same model, different
+Ask `demo@showcase.local` to email someone and you get a draft on the board.
+Ask `admin@showcase.local` and it sends. Same prompt, same model, different
 answer, and the difference is not the model's to make.
 
 One honest limitation: role-to-scope assignment lives in `lib/scopes.ts`, which
@@ -429,7 +450,7 @@ ordinary automation:
 ## Configuration
 
 All config flows through `env.ts` (Zod-validated). Every default there points
-at `localhost`, matching the ports Compose publishes, so running the harness
+at `localhost`, matching the ports Compose publishes, so running the showcase
 with `bun run dev` needs nothing in `.env` but `ANTHROPIC_API_KEY`. The `app`
 profile in `compose.yml` overrides the same variables with container
 hostnames.
@@ -444,11 +465,11 @@ To run against real backends instead of mocks, swap the env vars:
 | `PLANKA_BASE_URL`             | `http://localhost:1337` | swap for a Monday adapter (planned)      |
 | `KNOWLEDGE_DIR`               | `./knowledge`           | any directory, including a synced folder |
 
-## Routecraft framework gaps surfaced by this harness
+## Routecraft framework gaps surfaced by this showcase
 
 Building this is how the framework's gaps get found, and two are already
 closed: the `directory()` adapter and its enricher role exist because this
-harness needed to list a folder mid-route, and webhook signature verification
+showcase needed to list a folder mid-route, and webhook signature verification
 moved into `http()` after the first version of the ticket route hand-rolled
 it.
 
@@ -468,7 +489,7 @@ Still open:
 ## What's not here (deliberately)
 
 - Self-improvement loop. The agent does not propose new capabilities or
-  rewrite the harness's code. That belongs to a separate community example.
+  rewrite the showcase's code. That belongs to a separate community example.
 - Built-in chat UI. The MCP endpoint is the chat surface; bring your own
   client. A v1.1 release may add Lobe Chat as an optional fourth container.
 - Per-correlation memory or event introspection. The agent treats each
@@ -485,5 +506,6 @@ Apache-2.0. See [LICENSE](LICENSE).
 ## Links
 
 - [Routecraft](https://routecraft.dev) - the framework powering this demo.
+- [Playground](https://codespaces.new/routecraftjs/craft-playground) - the baseline template, hosted.
 - [Greenmail](https://greenmail-mail-test.github.io/greenmail/) - local mail server.
 - [Planka](https://planka.app/) - open-source Trello clone.

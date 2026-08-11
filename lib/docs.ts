@@ -8,7 +8,7 @@
  * `llms.txt` is a small convention for exposing documentation to language
  * models: a markdown file of `- [Title](url): description` entries whose
  * links point at raw markdown. Both routecraft.dev and devoptix.nl publish
- * one, which is why the harness needs no bundled docs and never answers
+ * one, which is why the showcase needs no bundled docs and never answers
  * from a stale copy.
  */
 

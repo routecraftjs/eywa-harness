@@ -46,7 +46,7 @@ type Found = z.infer<typeof ResultSchema>;
  * The shape is list, fan out, read, score, collect, and every step of it is a
  * framework operation: `directory()` lists, `.split()` fans out one exchange
  * per file, `file()` reads each one, `.aggregate()` brings them back. The only
- * code that belongs to this harness is the scoring, which lives in
+ * code that belongs to this showcase is the scoring, which lives in
  * `lib/knowledge.ts` and is unit-tested without touching a disk.
  *
  * Deliberately not cached. Searching does re-read every file on every call,

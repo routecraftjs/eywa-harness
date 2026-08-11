@@ -138,7 +138,7 @@ describe("a ticket event acts as the board", () => {
   });
 });
 
-describe("cron acts as the harness itself", () => {
+describe("cron acts as the showcase itself", () => {
   const claims = scheduled("heartbeat");
 
   it("may look at the board and the knowledge base", async () => {
@@ -249,19 +249,19 @@ describe("MCP callers differ from each other", () => {
     scopes: ceilingFor({ email }),
   });
 
-  it("gives admin@harness.local a real send", async () => {
-    expect(await canReach(human("admin@harness.local"), SCOPES.MAIL_SEND)).toBe(
-      true,
-    );
+  it("gives admin@showcase.local a real send", async () => {
+    expect(
+      await canReach(human("admin@showcase.local"), SCOPES.MAIL_SEND),
+    ).toBe(true);
   });
 
   // The whole demo turns on this one line: same prompt, same model, different
   // answer, and the difference is not the model's to make.
-  it("gives demo@harness.local a draft instead", async () => {
-    expect(await canReach(human("demo@harness.local"), SCOPES.MAIL_DRAFT)).toBe(
-      true,
-    );
-    expect(await canReach(human("demo@harness.local"), SCOPES.MAIL_SEND)).toBe(
+  it("gives demo@showcase.local a draft instead", async () => {
+    expect(
+      await canReach(human("demo@showcase.local"), SCOPES.MAIL_DRAFT),
+    ).toBe(true);
+    expect(await canReach(human("demo@showcase.local"), SCOPES.MAIL_SEND)).toBe(
       false,
     );
   });
@@ -287,14 +287,14 @@ describe("reachability is checked as well as authority", () => {
       authenticate({
         kind: "custom",
         scheme: "test",
-        subject: "admin@harness.local",
+        subject: "admin@showcase.local",
         scopes: [SCOPES.MAIL_SEND],
       }),
       {
         scheme: "internal",
         subject: "agent:someone-else",
         subjectProfile: "ai_agent",
-        issuer: "craft-harness",
+        issuer: "craft-showcase",
       },
     );
     await expect(
@@ -312,7 +312,7 @@ describe("reachability is checked as well as authority", () => {
         {
           kind: "custom",
           scheme: "test",
-          subject: "admin@harness.local",
+          subject: "admin@showcase.local",
           scopes: [SCOPES.MAIL_SEND],
         },
         SCOPES.MAIL_SEND,

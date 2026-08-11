@@ -24,14 +24,14 @@ export const craftConfig: CraftConfig = defineConfig({
      * The agent may call capabilities in this repository and nothing else.
      *
      * `mcp: false` denies the agent every tool from an external MCP server.
-     * That is the whole security posture of the harness in one line: reaching
+     * That is the whole security posture of the showcase in one line: reaching
      * an outside system has to go through a capability written here, where
      * the inputs are typed, the call is deterministic, and the blast radius
      * is visible in a diff. Handing the model a live MCP client instead would
      * make the model's judgement the control plane.
      *
      * This does not affect `chat-with-aria`: that is an MCP server this
-     * harness exposes, an entry point INTO the agent, not a tool the agent
+     * showcase exposes, an entry point INTO the agent, not a tool the agent
      * calls out to.
      *
      * All three kinds are spelled out because the type demands it: an
@@ -51,7 +51,7 @@ export const craftConfig: CraftConfig = defineConfig({
   /**
    * Inbound HTTP server for the Planka webhook.
    *
-   * The webhook receiver is the only `http()` source in the harness, so this
+   * The webhook receiver is the only `http()` source in the showcase, so this
    * verifier guards exactly one endpoint. Everything else that touches Planka
    * uses `http()` as a client, which this does not affect.
    *
@@ -73,7 +73,7 @@ export const craftConfig: CraftConfig = defineConfig({
               kind: "custom",
               scheme: "webhook",
               subject: "planka",
-              issuer: "craft-harness",
+              issuer: "craft-showcase",
             }
           : null,
     }),
@@ -98,7 +98,7 @@ export const craftConfig: CraftConfig = defineConfig({
     },
   },
   mcp: {
-    name: "craft-harness",
+    name: "craft-showcase",
     version: "0.1.0",
     transport: "http",
     host: env.APP_HOST,

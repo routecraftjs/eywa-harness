@@ -2,14 +2,14 @@
  * Who is acting, and on whose authority.
  *
  * The scope vocabulary lives in `lib/scopes.ts`. This file is the other half:
- * how each of the harness's four entry channels turns what it can actually
+ * how each of the showcase's four entry channels turns what it can actually
  * verify into a principal, and what the agent is allowed to be handed.
  *
  * The rule that shapes all of it is that identification is not authorization.
  * A `From:` header names a sender; it does not say what an agent may do for
  * them. So only the MCP channel, which carries a verified OIDC token, hands
  * Aria a real person's authority. Everything else runs on an authority the
- * harness itself owns and has deliberately kept small.
+ * showcase itself owns and has deliberately kept small.
  */
 
 import type { AuthorizeOptions, PrincipalClaims } from "@routecraft/routecraft";
@@ -29,7 +29,7 @@ export const ARIA: PrincipalClaims = {
   scheme: "internal",
   subject: "agent:aria",
   subjectProfile: "ai_agent",
-  issuer: "craft-harness",
+  issuer: "craft-showcase",
 };
 
 /**
@@ -78,7 +78,7 @@ export const mailbox = (sender: string): PrincipalClaims => ({
   scheme: "mailbox",
   subject: `mailbox:${env.MAIL_USER}`,
   subjectProfile: "service",
-  issuer: "craft-harness",
+  issuer: "craft-showcase",
   scopes: [...TRIGGERED_SCOPES],
   claims: { received_from: sender },
 });
@@ -91,7 +91,7 @@ export const mailbox = (sender: string): PrincipalClaims => ({
  * because nobody is watching a cron job, and a board event is the opposite
  * case, a person who just created or moved a card and is waiting.
  *
- * Borrowing it also made the harness quietly asymmetric. Mail-triggered Aria
+ * Borrowing it also made the showcase quietly asymmetric. Mail-triggered Aria
  * could park an approval draft; board-triggered Aria could not, so "email the
  * supplier and accept" refused when typed into a card and worked when sent by
  * email, for no reason a user could see. If anything the board is the better
@@ -107,7 +107,7 @@ export const boardTriage = (cardId: string): PrincipalClaims => ({
   scheme: "board",
   subject: "board:triage",
   subjectProfile: "service",
-  issuer: "craft-harness",
+  issuer: "craft-showcase",
   scopes: [...TRIGGERED_SCOPES],
   claims: { card: cardId },
 });
@@ -123,7 +123,7 @@ export const scheduled = (job: string): PrincipalClaims => ({
   scheme: "internal",
   subject: "agent:aria",
   subjectProfile: "ai_agent",
-  issuer: "craft-harness",
+  issuer: "craft-showcase",
   scopes: [...AUTONOMOUS_SCOPES],
   claims: { job },
 });
@@ -146,7 +146,7 @@ export const digest = (): PrincipalClaims => ({
   scheme: "internal",
   subject: "job:weekly-digest",
   subjectProfile: "service",
-  issuer: "craft-harness",
+  issuer: "craft-showcase",
   scopes: [SCOPES.TICKETS_READ, SCOPES.KB_READ, SCOPES.MAIL_SEND],
   claims: { job: "weekly-digest" },
 });
@@ -168,7 +168,7 @@ export const boardEvent = (cardId: string): PrincipalClaims => ({
   scheme: "board",
   subject: "board:webhook",
   subjectProfile: "service",
-  issuer: "craft-harness",
+  issuer: "craft-showcase",
   scopes: [SCOPES.TICKETS_READ],
   claims: { card: cardId },
 });
@@ -190,7 +190,7 @@ export const approvedByBoard = (cardId: string): PrincipalClaims => ({
   scheme: "board",
   subject: `board:${env.PLANKA_APPROVAL_LIST}`,
   subjectProfile: "service",
-  issuer: "craft-harness",
+  issuer: "craft-showcase",
   scopes: [SCOPES.MAIL_SEND, SCOPES.TICKETS_WRITE],
   claims: { card: cardId },
 });
@@ -211,17 +211,17 @@ export const ceilingFor = (claims: Record<string, unknown>): string[] =>
  *
  * The quick start has to work before anyone has met Dex, so the MCP channel
  * falls back to the demo user's authority rather than refusing. Deliberately
- * `demo@harness.local`, the user who cannot send mail: the fallback is the
+ * `demo@showcase.local`, the user who cannot send mail: the fallback is the
  * weaker identity, never the stronger one.
  */
 export const ANONYMOUS_FALLBACK: PrincipalClaims = {
   kind: "custom",
   scheme: "none",
-  subject: "demo@harness.local",
-  email: "demo@harness.local",
+  subject: "demo@showcase.local",
+  email: "demo@showcase.local",
   subjectProfile: "user",
-  issuer: "craft-harness",
-  scopes: scopesFromClaims({ email: "demo@harness.local" }),
+  issuer: "craft-showcase",
+  scopes: scopesFromClaims({ email: "demo@showcase.local" }),
 };
 
 /** Whether identity is being enforced at the edge. */

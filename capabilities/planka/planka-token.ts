@@ -10,7 +10,7 @@ import { env } from "../../env.js";
  * The cache is the point. Planka issues a bearer token from a login call,
  * and re-authenticating on every board operation would triple the request
  * count for no benefit. `.cache()` wraps the login step with a fixed key,
- * so the whole harness shares one token until it ages out. This is the
+ * so the whole showcase shares one token until it ages out. This is the
  * shape `.cache()` is actually for: an expensive call whose answer is
  * stable and does not change underneath you.
  */
