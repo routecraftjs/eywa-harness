@@ -29,7 +29,7 @@ const ResultSchema = z.object({ ticketId: z.string(), url: z.string() });
 /**
  * The backlog that writes itself.
  *
- * When a real request hits a capability the harness does not have, that gap
+ * When a real request hits a capability the showcase does not have, that gap
  * is worth more than any speculative roadmap item: the requester is real,
  * the need is real, and the card carries the context needed to build it.
  * Filing it is how the agent's own limits become the next sprint.

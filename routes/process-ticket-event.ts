@@ -132,7 +132,7 @@ export default craft()
             ...ex,
             body: {
               id: ex.headers["x-approval-ticket"] as string,
-              text: "Approved and sent. Recorded by the harness, not by Aria.",
+              text: "Approved and sent. Recorded by the approval route, not by Aria.",
             },
           }))
           .to(direct("comment-on-ticket"))

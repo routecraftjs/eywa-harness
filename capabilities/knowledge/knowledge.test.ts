@@ -56,11 +56,11 @@ const asCaller = (...scopes: string[]): Record<string, Principal> => ({
     authenticate({
       kind: "custom",
       scheme: "test",
-      subject: "demo@harness.local",
+      subject: "demo@showcase.local",
       subjectProfile: "user",
       scopes,
     }),
-    { subject: "agent:aria", issuer: "craft-harness" },
+    { subject: "agent:aria", issuer: "craft-showcase" },
   ),
 });
 

@@ -1,6 +1,6 @@
 # Checks every push and pull request.
 #
-# The harness is a public example, so the thing being demonstrated is that it
+# The showcase is a public example, so the thing being demonstrated is that it
 # compiles, lints, and passes its tests. A README claim nobody verifies is
 # worth less than the diff it sits in.
 #

@@ -14,7 +14,7 @@ import { ARIA, mailbox } from "../lib/identity.js";
  * `routecraft.mail.*` headers, so the agent input is assembled in a
  * `.process()` step that can see both.
  *
- * The harness has no `choice` block on the inbox today: every email goes
+ * The showcase has no `choice` block on the inbox today: every email goes
  * straight to the agent. As patterns emerge, deterministic sub-routes can
  * earn their way in by adding `when()` predicates here.
  *

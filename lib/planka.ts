@@ -1,10 +1,10 @@
 /**
  * Pure helpers for talking to Planka.
  *
- * Deliberately free of IO: every request the harness makes goes through the
+ * Deliberately free of IO: every request the showcase makes goes through the
  * `http()` adapter inside a route, so the pipeline owns retries, caching, and
  * error handling. What lives here is only shape, the mapping between Planka's
- * REST payloads and the harness's own ticket vocabulary.
+ * REST payloads and the showcase's own ticket vocabulary.
  */
 
 import { env } from "../env.js";
@@ -100,7 +100,7 @@ export interface PlankaCard {
   listId: string;
 }
 
-/** Map a Planka card onto the harness ticket shape. */
+/** Map a Planka card onto the showcase ticket shape. */
 export const toTicket = (
   card: PlankaCard,
   board: BoardContext,

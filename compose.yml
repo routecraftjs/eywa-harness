@@ -1,7 +1,7 @@
-# Craft Harness Docker Compose stack.
+# Craft Showcase Docker Compose stack.
 #
 # `docker compose up` brings up everything you need for the demo: a mock mail
-# server, a mock kanban board, and the harness app itself.
+# server, a mock kanban board, and the showcase app itself.
 #
 # There is no storage service. The knowledge base is a directory of markdown
 # files bind-mounted from this repository, read and written through Routecraft's
@@ -11,13 +11,13 @@
 # JWKS and verifies signatures. It runs by default and costs nothing until you
 # set AUTH_DISABLED=false.
 
-name: craft-harness
+name: craft-showcase
 
 services:
   greenmail:
     image: greenmail/standalone:2.1.5
     environment:
-      GREENMAIL_OPTS: "-Dgreenmail.setup.test.all -Dgreenmail.hostname=0.0.0.0 -Dgreenmail.users=aria@harness.local:aria,jaco@harness.local:jaco,demo@harness.local:demo -Dgreenmail.auth.disabled"
+      GREENMAIL_OPTS: "-Dgreenmail.setup.test.all -Dgreenmail.hostname=0.0.0.0 -Dgreenmail.users=aria@showcase.local:aria,jaco@showcase.local:jaco,demo@showcase.local:demo -Dgreenmail.auth.disabled"
     ports:
       - "3025:3025" # SMTP
       - "3143:3143" # IMAP
@@ -44,7 +44,7 @@ services:
   # and her approved replies arrive somewhere you can read them.
   #
   # Greenmail runs with `greenmail.auth.disabled`, so any password works. Log
-  # in as jaco@harness.local or demo@harness.local.
+  # in as jaco@showcase.local or demo@showcase.local.
   webmail:
     image: roundcube/roundcubemail:1.7.2-apache
     depends_on:
@@ -85,12 +85,12 @@ services:
       BASE_URL: http://localhost:1337
       DATABASE_URL: postgresql://planka:planka@postgres/planka
       SECRET_KEY: dev-secret-change-me-not-for-production
-      DEFAULT_ADMIN_EMAIL: demo@harness.local
+      DEFAULT_ADMIN_EMAIL: demo@showcase.local
       DEFAULT_ADMIN_PASSWORD: demo
       DEFAULT_ADMIN_NAME: Demo Admin
       DEFAULT_ADMIN_USERNAME: demo
       # Without this Planka's webhook sender is switched off entirely and the
-      # board never tells the harness anything: creating a card or dragging one
+      # board never tells the showcase anything: creating a card or dragging one
       # to Approved would silently do nothing.
       #
       # `accessToken` is the only credential Planka can attach. It arrives as
@@ -129,7 +129,7 @@ services:
 
   # Creates the project, board, and lists the ticket capabilities resolve by
   # name, then exits. Without it a fresh clone fails its first ticket with
-  # `Planka project "Craft Harness" not found`.
+  # `Planka project "Craft Showcase" not found`.
   #
   # Runs on the stock Bun image with `seed.ts` mounted, rather than building
   # the app image. The script imports nothing, so it needs no node_modules,
@@ -145,9 +145,9 @@ services:
         condition: service_healthy
     environment:
       PLANKA_BASE_URL: http://planka:1337
-      PLANKA_USER: demo@harness.local
+      PLANKA_USER: demo@showcase.local
       PLANKA_PASSWORD: demo
-      PLANKA_PROJECT_NAME: Craft Harness
+      PLANKA_PROJECT_NAME: Craft Showcase
       PLANKA_BOARD_NAME: Tasks
       PLANKA_APPROVAL_LIST: Approved
 
@@ -172,7 +172,7 @@ services:
       timeout: 3s
       retries: 12
 
-  # The harness itself, containerised. Opt-in, and not how you should develop.
+  # The showcase itself, containerised. Opt-in, and not how you should develop.
   #
   #   docker compose --profile app up -d
   #   APP_WEBHOOK_URL=http://app:3000/webhooks/planka   # in .env, or Planka
@@ -185,7 +185,7 @@ services:
   app:
     profiles: ["app"]
     build: .
-    image: craft-harness-app
+    image: craft-showcase-app
     # The app exits fatally if IMAP becomes unreachable (mail source retries,
     # then shuts the context down), so let Compose bring it back.
     restart: unless-stopped
@@ -209,16 +209,16 @@ services:
       MAIL_HOST: greenmail
       MAIL_IMAP_PORT: 3143
       MAIL_SMTP_PORT: 3025
-      MAIL_USER: aria@harness.local
+      MAIL_USER: aria@showcase.local
       MAIL_PASSWORD: aria
       MAIL_TLS: "false"
       MAIL_POLL_INTERVAL_MS: 5000
 
       # Planka
       PLANKA_BASE_URL: http://planka:1337
-      PLANKA_USER: demo@harness.local
+      PLANKA_USER: demo@showcase.local
       PLANKA_PASSWORD: demo
-      PLANKA_PROJECT_NAME: Craft Harness
+      PLANKA_PROJECT_NAME: Craft Showcase
       PLANKA_BOARD_NAME: Tasks
       PLANKA_WEBHOOK_SECRET: dev-secret-change-me
 
@@ -234,7 +234,7 @@ services:
       # becomes a container hostname here.
       OIDC_ISSUER: http://localhost:5556/dex
       OIDC_JWKS_URL: http://dex:5556/dex/keys
-      OIDC_AUDIENCE: craft-harness
+      OIDC_AUDIENCE: craft-showcase
       AUTH_DISABLED: ${AUTH_DISABLED:-true}
 
       # HTTP

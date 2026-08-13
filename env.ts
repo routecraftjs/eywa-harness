@@ -32,16 +32,16 @@ const EnvSchema = z.object({
   MAIL_HOST: z.string().default("localhost"),
   MAIL_IMAP_PORT: z.coerce.number().default(3143),
   MAIL_SMTP_PORT: z.coerce.number().default(3025),
-  MAIL_USER: z.string().default("aria@harness.local"),
+  MAIL_USER: z.string().default("aria@showcase.local"),
   MAIL_PASSWORD: z.string().default("aria"),
   MAIL_TLS: bool(false),
   MAIL_POLL_INTERVAL_MS: z.coerce.number().default(5000),
 
   // Planka (mock ticket system)
   PLANKA_BASE_URL: z.string().default("http://localhost:1337"),
-  PLANKA_USER: z.string().default("demo@harness.local"),
+  PLANKA_USER: z.string().default("demo@showcase.local"),
   PLANKA_PASSWORD: z.string().default("demo"),
-  PLANKA_PROJECT_NAME: z.string().default("Craft Harness"),
+  PLANKA_PROJECT_NAME: z.string().default("Craft Showcase"),
   PLANKA_BOARD_NAME: z.string().default("Tasks"),
   PLANKA_WEBHOOK_SECRET: z.string().default("dev-secret-change-me"),
   PLANKA_APPROVAL_LIST: z.string().default("Approved"),
@@ -52,7 +52,7 @@ const EnvSchema = z.object({
   PLANKA_BOARD_TTL_MS: z.coerce.number().default(10 * 60 * 1000),
 
   // Where the deterministic weekly digest is sent.
-  DIGEST_RECIPIENT: z.string().default("demo@harness.local"),
+  DIGEST_RECIPIENT: z.string().default("demo@showcase.local"),
 
   // Knowledge base: a directory of markdown files, read and written through
   // the file() and directory() adapters. Mount it as a volume to keep what
@@ -60,7 +60,7 @@ const EnvSchema = z.object({
   KNOWLEDGE_DIR: z.string().default("./knowledge"),
 
   // Public documentation sources. Both sites publish an `llms.txt` index
-  // whose entries link to raw markdown, so the harness needs no bundled
+  // whose entries link to raw markdown, so the showcase needs no bundled
   // copy of the docs and never serves a stale answer.
   DOCS_ROUTECRAFT_INDEX: z.string().default("https://routecraft.dev/llms.txt"),
   DOCS_DEVOPTIX_INDEX: z.string().default("https://devoptix.nl/llms.txt"),
@@ -70,7 +70,7 @@ const EnvSchema = z.object({
   // dex/config.yaml exactly: it is compared against the token's `iss`.
   OIDC_ISSUER: z.string().default("http://localhost:5556/dex"),
   OIDC_JWKS_URL: z.string().default("http://localhost:5556/dex/keys"),
-  OIDC_AUDIENCE: z.string().default("craft-harness"),
+  OIDC_AUDIENCE: z.string().default("craft-showcase"),
   /**
    * Accept MCP calls that carry no bearer token, treating them as the demo
    * user. On by default so the quick start works before anyone has met Dex;

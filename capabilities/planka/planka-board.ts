@@ -29,7 +29,7 @@ type WithBoard = WithProject & { boardId: string };
  * Internal plumbing, like planka-token: no persona lists it, so it is
  * reached only from other routes via `direct()`.
  *
- * Planka addresses everything by id while the harness configures everything
+ * Planka addresses everything by id while the showcase configures everything
  * by name, so this walks projects to board to lists. That is three dependent
  * calls, which is what `.enrich()` is for: each step adds what it learned to
  * the body and the next step reads it.

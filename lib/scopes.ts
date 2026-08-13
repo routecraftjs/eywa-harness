@@ -1,5 +1,5 @@
 /**
- * The harness's authorization vocabulary: `domain:verb`, split by blast
+ * The showcase's authorization vocabulary: `domain:verb`, split by blast
  * radius rather than by which capability happens to need it.
  *
  * Scopes are enforced by `.authorize()` on each capability route, so the
@@ -18,7 +18,7 @@ export const SCOPES = {
   KB_WRITE: "kb:write",
   /**
    * Send email immediately, with no human in the loop. The most dangerous
-   * scope in the harness: mail leaves the building the moment a tool runs.
+   * scope in the showcase: mail leaves the building the moment a tool runs.
    */
   MAIL_SEND: "mail:send",
   /**
@@ -52,8 +52,8 @@ const ALL: readonly Scope[] = Object.values(SCOPES);
  * send is a draft a human approves on the board.
  */
 const SCOPES_BY_EMAIL: Record<string, readonly Scope[]> = {
-  "admin@harness.local": ALL,
-  "demo@harness.local": [
+  "admin@showcase.local": ALL,
+  "demo@showcase.local": [
     SCOPES.TICKETS_READ,
     SCOPES.TICKETS_WRITE,
     SCOPES.KB_READ,
