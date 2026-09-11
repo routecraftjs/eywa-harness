@@ -23,11 +23,15 @@ This is the far end, not the front door. Routecraft ships the agent harness
 itself, so none of the infrastructure below is what you need to run an agent:
 
 ```bash
-bun create routecraft
+bun create routecraft my-agent --example https://github.com/routecraftjs/craft-harness
 ```
 
-That gives you a capability and an agent with no Docker, no mail server, and no
-identity provider. Or open the
+That is [craft-harness](https://github.com/routecraftjs/craft-harness): a
+working agent laid out in the project convention, where every capability is an
+ordinary route you own. No Docker, no mail server, no identity provider.
+
+For an empty project rather than an agent, `bun create routecraft` scaffolds one
+capability and nothing else. Or open the
 [playground](https://codespaces.new/routecraftjs/craft-playground) and skip the
 install entirely.
 
